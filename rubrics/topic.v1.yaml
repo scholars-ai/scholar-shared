@@ -1,0 +1,43 @@
+# 选题评分 rubric（SPEC-004 §2）
+# 结构由 schemas/scholars.schema.json#RubricDefinition 约束，CI 校验。
+# initialWeight 仅为初始权重；生效权重存 DB（WeightSet），由校准环节人工确认后调整。
+id: topic
+version: v1
+passThreshold: 60 # >=75 推荐、60–75 备选、<60 自动 rejected（保留数据用于校准）
+dimensions:
+  - key: timeliness
+    name: 时效性
+    description: 是否处于热点窗口期？常青话题不扣分但需标注类型。
+    initialWeight: 0.20
+    anchors: []
+    vetoBelow: null
+  - key: audience_value
+    name: 受众价值
+    description: 对目标读者（AI 学习者/从业者）的信息增量或情绪价值有多大。
+    initialWeight: 0.25
+    anchors: []
+    vetoBelow: null
+  - key: platform_fit
+    name: 平台适配
+    description: 该角度在建议平台上是否有成立的内容形态。
+    initialWeight: 0.15
+    anchors: []
+    vetoBelow: null
+  - key: differentiation
+    name: 差异化空间
+    description: 全网同题内容饱和度，我们能否提供不同视角。
+    initialWeight: 0.15
+    anchors: []
+    vetoBelow: null
+  - key: material_richness
+    name: 素材支撑
+    description: 现有素材是否足以写出干货，还是只有一句新闻。
+    initialWeight: 0.10
+    anchors: []
+    vetoBelow: null
+  - key: history_signal
+    name: 历史信号
+    description: 与历史高表现选题的相似度。冷启动阶段该维度权重降为 0 并按比例归一（SPEC-004 §2）。
+    initialWeight: 0.15
+    anchors: []
+    vetoBelow: null

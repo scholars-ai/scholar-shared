@@ -1,0 +1,159 @@
+openapi: 3.0.3
+info:
+  title: scholar-core API
+  version: 0.1.0
+  description: |
+    scholars-ai 业务核心 REST API 契约（M0 骨架，随里程碑扩展）。
+    实体结构的单一事实来源是 ../schemas/scholars.schema.json —— 本文件中的
+    schema 是其 API 视图；两者一致性由 CI 逐步覆盖（见仓库 README 开放问题）。
+servers:
+  - url: /api
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: 健康检查（含 DB 连通性）
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /v1/topics:
+    get:
+      operationId: listTopics
+      summary: 选题列表（按状态过滤，latestScore 倒序）
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TopicStatus"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Topic"
+                  total: { type: integer }
+    post:
+      operationId: createManualTopic
+      summary: 手动创建选题（M0 验收：空管道插入一条手动 topic）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTopicRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/topics/{topicId}:
+    get:
+      operationId: getTopic
+      summary: 选题详情
+      parameters:
+        - $ref: "#/components/parameters/TopicId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    TopicId:
+      name: topicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    BadRequest:
+      description: 请求非法
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Health:
+      type: object
+      required: [status, db]
+      properties:
+        status: { type: string, enum: [ok] }
+        db: { type: string, enum: [ok, down] }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+    Platform:
+      type: string
+      enum: [xiaohongshu, zhihu, wechat]
+    TopicStatus:
+      type: string
+      enum: [candidate, scored, approved, in_writing, written, rejected]
+    Topic:
+      type: object
+      required: [id, title, angle, summary, rawItemIds, targetPlatforms, status, latestScore]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        angle: { type: string }
+        summary: { type: string }
+        rawItemIds:
+          type: array
+          items: { type: string, format: uuid }
+        targetPlatforms:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Platform"
+        status:
+          $ref: "#/components/schemas/TopicStatus"
+        latestScore:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 100
+    CreateTopicRequest:
+      type: object
+      required: [title, angle, summary, targetPlatforms]
+      properties:
+        title: { type: string, minLength: 1 }
+        angle: { type: string }
+        summary: { type: string }
+        targetPlatforms:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Platform"

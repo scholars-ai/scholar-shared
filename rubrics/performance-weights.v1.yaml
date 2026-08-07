@@ -1,0 +1,30 @@
+# 表现分 P 的平台权重（SPEC-006 §3，v1 初值）
+# 结构由 schemas/scholars.schema.json#PerformanceWeights 约束（每个列表项）。
+# P 只在平台内计算，对近 90 天历史做百分位归一；权重反映各平台运营目标。
+- platform: xiaohongshu # 重收藏 + 涨粉
+  version: 1
+  weights:
+    views: 0.10
+    likes: 0.15
+    favorites: 0.35
+    comments: 0.10
+    shares: 0.05
+    follows: 0.25
+- platform: zhihu # 重赞同 + 收藏
+  version: 1
+  weights:
+    views: 0.10
+    likes: 0.35
+    favorites: 0.30
+    comments: 0.15
+    shares: 0.10
+    follows: 0.00
+- platform: wechat # 重完读代理（views）+ 在看/转发
+  version: 1
+  weights:
+    views: 0.30
+    likes: 0.15
+    favorites: 0.10
+    comments: 0.10
+    shares: 0.35
+    follows: 0.00

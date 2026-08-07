@@ -1,0 +1,30 @@
+# 文章评分通用维度（SPEC-004 §3）——所有平台 rubric 的公共部分。
+# M2 落地平台 rubric（article/xiaohongshu 等）时，以本文件为基底扩展平台特化维度并重新归一权重。
+id: article/common
+version: v1
+passThreshold: 70 # 过审线：>= 进 pending_review，< 回炉（最多 2 轮）
+dimensions:
+  - key: accuracy
+    name: 事实准确
+    description: 与素材事实一致、无编造，技术表述正确。
+    initialWeight: 0.30
+    anchors: []
+    vetoBelow: 6 # 一票否决：数据再好看，事实错了就是事故（SPEC-004 §3）
+  - key: structure
+    name: 结构
+    description: 开头钩子、行文逻辑、结尾引导。
+    initialWeight: 0.25
+    anchors: []
+    vetoBelow: null
+  - key: readability
+    name: 可读性
+    description: 语言流畅度、段落节奏、术语解释是否到位。
+    initialWeight: 0.25
+    anchors: []
+    vetoBelow: null
+  - key: format_compliance
+    name: 格式合规
+    description: Markdown 规范、字数区间、平台硬性要求（SPEC-005 Platform Profile）。
+    initialWeight: 0.20
+    anchors: []
+    vetoBelow: null
