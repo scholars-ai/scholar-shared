@@ -1,0 +1,17 @@
+# 使 gen/python 可作为 git 子目录依赖被安装：
+#   uv add "scholar-contracts @ git+https://github.com/scholars-ai/scholar-shared#subdirectory=gen/python"
+# 本文件手写维护；models.py 由 scripts/generate.sh 生成。
+[project]
+name = "scholar-contracts"
+version = "0.1.0"
+description = "Generated Pydantic v2 models for scholars-ai contracts (do not edit models.py)"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = ["pydantic>=2.9"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scholar_contracts"]
