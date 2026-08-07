@@ -239,7 +239,7 @@ func (j *ArticleAsset) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// queue: article.evaluate
+// queue: article_evaluate
 type ArticleEvaluateJob struct {
 	// ArticleId corresponds to the JSON schema field "articleId".
 	ArticleId string `json:"articleId" yaml:"articleId" mapstructure:"articleId"`
@@ -338,7 +338,7 @@ func (j *ArticleStatus) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// queue: article.write
+// queue: article_write
 type ArticleWriteJob struct {
 	// Platform corresponds to the JSON schema field "platform".
 	Platform Platform `json:"platform" yaml:"platform" mapstructure:"platform"`
@@ -784,7 +784,7 @@ func (j *JobResult) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// queue: memory.reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）
+// queue: memory_reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）
 type MemoryReflectJob struct {
 	// PeriodEnd corresponds to the JSON schema field "periodEnd".
 	PeriodEnd time.Time `json:"periodEnd" yaml:"periodEnd" mapstructure:"periodEnd"`
@@ -1425,7 +1425,7 @@ func (j *SourceCategory) UnmarshalJSON(value []byte) error {
 
 type SourceFetchConfig map[string]interface{}
 
-// queue: source.fetch（core cron 投递，agents 采集，SPEC-003 §3）
+// queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）
 type SourceFetchJob struct {
 	// SourceId corresponds to the JSON schema field "sourceId".
 	SourceId string `json:"sourceId" yaml:"sourceId" mapstructure:"sourceId"`
@@ -1560,7 +1560,7 @@ type Topic struct {
 	Title string `json:"title" yaml:"title" mapstructure:"title"`
 }
 
-// queue: topic.evaluate（SPEC-001 §3。队列名注册表见 queues.json）
+// queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
 type TopicEvaluateJob struct {
 	// 缺省用当前生效版本
 	RubricVersion *string `json:"rubricVersion,omitempty,omitzero" yaml:"rubricVersion,omitempty" mapstructure:"rubricVersion,omitempty"`
@@ -1591,7 +1591,7 @@ type TopicEvaluation interface{}
 
 type TopicLatestScore *float64
 
-// queue: topic.scout（聚合 status=new 的素材为选题，SPEC-003 §4）
+// queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）
 type TopicScoutJob struct {
 	// MaxTopics corresponds to the JSON schema field "maxTopics".
 	MaxTopics *int `json:"maxTopics,omitempty,omitzero" yaml:"maxTopics,omitempty" mapstructure:"maxTopics,omitempty"`

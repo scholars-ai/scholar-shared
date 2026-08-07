@@ -259,7 +259,7 @@
     },
 
     "TopicEvaluateJob": {
-      "description": "queue: topic.evaluate（SPEC-001 §3。队列名注册表见 queues.json）",
+      "description": "queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）",
       "type": "object",
       "additionalProperties": false,
       "required": ["topicId"],
@@ -280,7 +280,7 @@
       }
     },
     "ArticleWriteJob": {
-      "description": "queue: article.write",
+      "description": "queue: article_write",
       "type": "object",
       "additionalProperties": false,
       "required": ["topicId", "platform"],
@@ -291,7 +291,7 @@
       }
     },
     "ArticleEvaluateJob": {
-      "description": "queue: article.evaluate",
+      "description": "queue: article_evaluate",
       "type": "object",
       "additionalProperties": false,
       "required": ["articleId"],
@@ -301,7 +301,7 @@
       }
     },
     "SourceFetchJob": {
-      "description": "queue: source.fetch（core cron 投递，agents 采集，SPEC-003 §3）",
+      "description": "queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）",
       "type": "object",
       "additionalProperties": false,
       "required": ["sourceId"],
@@ -310,7 +310,7 @@
       }
     },
     "TopicScoutJob": {
-      "description": "queue: topic.scout（聚合 status=new 的素材为选题，SPEC-003 §4）",
+      "description": "queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -318,7 +318,7 @@
       }
     },
     "MemoryReflectJob": {
-      "description": "queue: memory.reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）",
+      "description": "queue: memory_reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）",
       "type": "object",
       "additionalProperties": false,
       "required": ["periodStart", "periodEnd"],

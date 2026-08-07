@@ -1,11 +1,11 @@
 {
-  "$comment": "队列注册表：queue 名 → payload 的 schema definition。Go 入队与 Python 消费都从此文件读取，禁止手写队列名字符串。",
+  "$comment": "队列注册表：queue 名 → payload 的 schema definition。Go 入队与 Python 消费都从此文件读取，禁止手写队列名字符串。命名只用 [a-z_]（pgmq 物理表名约束，见 ADR-003）。",
   "queues": {
-    "source.fetch": "SourceFetchJob",
-    "topic.scout": "TopicScoutJob",
-    "topic.evaluate": "TopicEvaluateJob",
-    "article.write": "ArticleWriteJob",
-    "article.evaluate": "ArticleEvaluateJob",
-    "memory.reflect": "MemoryReflectJob"
+    "source_fetch": "SourceFetchJob",
+    "topic_scout": "TopicScoutJob",
+    "topic_evaluate": "TopicEvaluateJob",
+    "article_write": "ArticleWriteJob",
+    "article_evaluate": "ArticleEvaluateJob",
+    "memory_reflect": "MemoryReflectJob"
   }
 }

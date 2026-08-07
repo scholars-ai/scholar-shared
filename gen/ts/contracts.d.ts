@@ -310,7 +310,7 @@ export interface AgentRun {
   status: AgentRunStatus;
 }
 /**
- * queue: topic.evaluate（SPEC-001 §3。队列名注册表见 queues.json）
+ * queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
  * via the `definition` "TopicEvaluateJob".
@@ -337,7 +337,7 @@ export interface RewriteContext {
   redoOutline: boolean;
 }
 /**
- * queue: article.write
+ * queue: article_write
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
  * via the `definition` "ArticleWriteJob".
@@ -348,7 +348,7 @@ export interface ArticleWriteJob {
   rewrite?: RewriteContext;
 }
 /**
- * queue: article.evaluate
+ * queue: article_evaluate
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
  * via the `definition` "ArticleEvaluateJob".
@@ -358,7 +358,7 @@ export interface ArticleEvaluateJob {
   rubricVersion?: string;
 }
 /**
- * queue: source.fetch（core cron 投递，agents 采集，SPEC-003 §3）
+ * queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
  * via the `definition` "SourceFetchJob".
@@ -367,7 +367,7 @@ export interface SourceFetchJob {
   sourceId: string;
 }
 /**
- * queue: topic.scout（聚合 status=new 的素材为选题，SPEC-003 §4）
+ * queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
  * via the `definition` "TopicScoutJob".
@@ -376,7 +376,7 @@ export interface TopicScoutJob {
   maxTopics?: number;
 }
 /**
- * queue: memory.reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）
+ * queue: memory_reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
  * via the `definition` "MemoryReflectJob".

@@ -367,7 +367,7 @@ class AgentRun(BaseModel):
 
 class TopicEvaluateJob(BaseModel):
     """
-    queue: topic.evaluate（SPEC-001 §3。队列名注册表见 queues.json）
+    queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
     """
 
     model_config = ConfigDict(
@@ -398,7 +398,7 @@ class RewriteContext(BaseModel):
 
 class ArticleWriteJob(BaseModel):
     """
-    queue: article.write
+    queue: article_write
     """
 
     model_config = ConfigDict(
@@ -411,7 +411,7 @@ class ArticleWriteJob(BaseModel):
 
 class ArticleEvaluateJob(BaseModel):
     """
-    queue: article.evaluate
+    queue: article_evaluate
     """
 
     model_config = ConfigDict(
@@ -423,7 +423,7 @@ class ArticleEvaluateJob(BaseModel):
 
 class SourceFetchJob(BaseModel):
     """
-    queue: source.fetch（core cron 投递，agents 采集，SPEC-003 §3）
+    queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）
     """
 
     model_config = ConfigDict(
@@ -434,7 +434,7 @@ class SourceFetchJob(BaseModel):
 
 class TopicScoutJob(BaseModel):
     """
-    queue: topic.scout（聚合 status=new 的素材为选题，SPEC-003 §4）
+    queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）
     """
 
     model_config = ConfigDict(
@@ -445,7 +445,7 @@ class TopicScoutJob(BaseModel):
 
 class MemoryReflectJob(BaseModel):
     """
-    queue: memory.reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）
+    queue: memory_reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）
     """
 
     model_config = ConfigDict(
