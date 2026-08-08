@@ -11,7 +11,7 @@ openapi/core.yaml              scholar-core 的 REST API 契约
 rubrics/*.yaml                 评分 rubric 数据（版本化，SPEC-004）
 gen/go/                        生成物 → scholar-core 以 go module 引用
 gen/python/                    生成物（Pydantic v2）→ scholar-agents 引用
-gen/ts/                        生成物 → scholar-console 引用
+gen/ts/                        生成物 → scholar-client 引用
 scripts/generate.sh            codegen 管线（工具版本全固定）
 scripts/validate.py            契约自检（schema 合法/权重归一/队列指向存在）
 ```
