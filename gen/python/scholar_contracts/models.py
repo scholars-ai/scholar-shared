@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
 from uuid import UUID
 
 from pydantic import (
@@ -12,6 +11,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    RootModel,
     confloat,
     conint,
     constr,
@@ -122,25 +122,22 @@ class AgentRunStatus(StrEnum):
     failed = 'failed'
 
 
-class Source(BaseModel):
+class SourceRole(StrEnum):
     """
-    信源（SPEC-003 §2）
+    material=能拿到原文，可作写作素材；signal=只有二手摘要，仅供发现（SPEC-003 §2.1）
     """
 
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    id: UUID
-    name: constr(min_length=1)
-    type: SourceType
-    url: str | None
-    category: SourceCategory
-    weight: confloat(ge=0.0, le=1.0)
+    material = 'material'
+    signal = 'signal'
+
+
+class FullTextStrategy(StrEnum):
     """
-    信源质量权重 0–1，被反馈闭环校准（SPEC-006 §5）
+    rss_description=RSS 自带正文足够；fetch_page=需抓原文页（trafilatura）
     """
-    enabled: bool
-    fetchConfig: dict[str, Any]
+
+    rss_description = 'rss_description'
+    fetch_page = 'fetch_page'
 
 
 class RawItem(BaseModel):
@@ -468,6 +465,109 @@ class JobResult(BaseModel):
     langfuseTraceId: str | None
 
 
+class SourceFetchSchedule(BaseModel):
+    """
+    采集调度：全局默认间隔，可被 sources.fetchConfig.intervalMinutes 逐源覆盖
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    enabled: bool
+    defaultIntervalMinutes: conint(ge=5, le=10080)
+    """
+    下限 5 分钟：防止误配成高频轮询触发上游限流（RSSHub / X 尤其敏感）
+    """
+
+
+class Time(RootModel[constr(pattern=r'^([01][0-9]|2[0-3]):[0-5][0-9]$')]):
+    root: constr(pattern=r'^([01][0-9]|2[0-3]):[0-5][0-9]$')
+
+
+class TopicScoutSchedule(BaseModel):
+    """
+    选题聚合调度：按每日固定时刻触发
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    enabled: bool
+    times: list[Time] = Field(..., max_length=24, min_length=1)
+    """
+    每日执行时刻（HH:MM，24 小时制）。client 用表单生成，不让用户手写 cron 表达式
+    """
+    timezone: constr(min_length=1)
+    """
+    IANA 时区名，如 Asia/Shanghai
+    """
+    minNewItems: conint(ge=0, le=1000)
+    """
+    新素材不足此数则跳过本次运行并留痕（避免为几条素材烧一次 LLM）
+    """
+
+
+class TopicEvaluateSchedule(BaseModel):
+    """
+    评分调度：**事件驱动**，candidate 产生即投递，不设固定时刻（SPEC-008 §3.1 纪律 2）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    enabled: bool
+    maxConcurrency: conint(ge=1, le=32)
+    dailyTokenBudget: conint(ge=0) | None
+    """
+    每日 token 上限，超限停止消费并告警；null=不限
+    """
+
+
+class SourceHealth(BaseModel):
+    """
+    信源采集健康状态（client 信源管理页展示；连续失败需告警）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    sourceId: UUID
+    lastRunAt: AwareDatetime | None
+    lastSuccessAt: AwareDatetime | None
+    consecutiveFailures: conint(ge=0)
+    lastError: str | None
+    nextRunAt: AwareDatetime | None
+
+
+class DimensionScore(BaseModel):
+    """
+    单维度评分：分数 + 该维度的具体理由（强制逐维给理由，抑制笼统打分）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    score: confloat(ge=0.0, le=10.0)
+    reason: constr(min_length=1)
+
+
+class TopicDraft(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    title: constr(min_length=1, max_length=200)
+    angle: constr(min_length=1)
+    """
+    切入角度：同一事件对小红书和知乎的写法角度可能完全不同
+    """
+    summary: constr(min_length=1)
+    """
+    选题简介 + 素材要点
+    """
+    rawItemIds: list[UUID] = Field(..., min_length=1)
+    targetPlatforms: list[Platform] = Field(..., min_length=1)
+
+
 class RubricAnchor(BaseModel):
     """
     锚定样例：抑制 LLM 评分中心化（SPEC-004 §1.3）
@@ -544,3 +644,107 @@ class PerformanceWeights(BaseModel):
     platform: Platform
     version: conint(ge=1)
     weights: dict[str, confloat(ge=0.0)]
+
+
+class SourceFetchConfig(BaseModel):
+    """
+    单个信源的采集配置（SPEC-008 §3.1）。intervalMinutes 为空表示沿用全局默认；不为空即覆盖全局。additionalProperties 保持开放以便加源专属开关而不破契约。
+    """
+
+    model_config = ConfigDict(
+        extra='allow',
+    )
+    role: SourceRole | None = None
+    fullText: FullTextStrategy | None = None
+    maxItems: conint(ge=1, le=500) | None = None
+    """
+    单次采集条目上限。arXiv 类源单次返回数百条，必须限量
+    """
+    maxAgeDays: conint(ge=1, le=365) | None = None
+    """
+    早于此天数的条目直接丢弃且不做 embedding（省额度）
+    """
+    intervalMinutes: conint(ge=5, le=10080) | None = None
+    """
+    覆盖全局采集间隔；null/缺省=沿用全局默认（SPEC-008 §3.1）
+    """
+
+
+class SchedulerSettings(BaseModel):
+    """
+    全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    sourceFetch: SourceFetchSchedule
+    topicScout: TopicScoutSchedule
+    topicEvaluate: TopicEvaluateSchedule
+
+
+class DimensionScores(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    timeliness: DimensionScore
+    audience_value: DimensionScore
+    platform_fit: DimensionScore
+    differentiation: DimensionScore
+    material_richness: DimensionScore
+    history_signal: DimensionScore
+
+
+class TopicJudgeOutput(BaseModel):
+    """
+    TopicJudge 的结构化输出契约（供 runtime.complete_structured 校验）。**维度 key 必须与 rubrics/topic.v1.yaml 完全一致**——rubric 是唯一事实来源，此处不得另立一套。totalScore 由代码按生效权重重算，不信任模型自报（SPEC-004 §1.2）。
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    dimensionScores: DimensionScores
+    rationale: constr(min_length=1)
+    """
+    人可读的总体评审理由：评分不可信时人要能一眼看出是 rubric 问题还是模型问题（SPEC-004 §1.5）
+    """
+    suggestedPlatforms: list[Platform] | None = None
+    """
+    Judge 认为该选题更适合的平台（可与 TopicScout 的建议不同）
+    """
+
+
+class TopicScoutOutput(BaseModel):
+    """
+    TopicScout 的结构化输出契约：一簇素材 → 1–3 个选题角度（SPEC-003 §4）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    topics: list[TopicDraft] = Field(..., max_length=3, min_length=0)
+    discardReason: str | None = None
+    """
+    本簇未产出任何选题时的原因（留痕，便于调 prompt）
+    """
+
+
+class Source(BaseModel):
+    """
+    信源（SPEC-003 §2）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: UUID
+    name: constr(min_length=1)
+    type: SourceType
+    url: str | None
+    category: SourceCategory
+    weight: confloat(ge=0.0, le=1.0)
+    """
+    信源质量权重 0–1，被反馈闭环校准（SPEC-006 §5）
+    """
+    enabled: bool
+    fetchConfig: SourceFetchConfig

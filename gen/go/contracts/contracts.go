@@ -4,8 +4,10 @@ package contracts
 
 import "encoding/json"
 import "fmt"
+import "github.com/go-viper/mapstructure/v2"
 import "reflect"
 import "regexp"
+import "strings"
 import "time"
 import "unicode/utf8"
 
@@ -428,6 +430,45 @@ func (j *Article) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// 单维度评分：分数 + 该维度的具体理由（强制逐维给理由，抑制笼统打分）
+type DimensionScore struct {
+	// Reason corresponds to the JSON schema field "reason".
+	Reason string `json:"reason" yaml:"reason" mapstructure:"reason"`
+
+	// Score corresponds to the JSON schema field "score".
+	Score float64 `json:"score" yaml:"score" mapstructure:"score"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *DimensionScore) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["reason"]; raw != nil && !ok {
+		return fmt.Errorf("field reason in DimensionScore: required")
+	}
+	if _, ok := raw["score"]; raw != nil && !ok {
+		return fmt.Errorf("field score in DimensionScore: required")
+	}
+	type Plain DimensionScore
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain.Reason)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "reason", 1)
+	}
+	if 10 < plain.Score {
+		return fmt.Errorf("field %s: must be <= %v", "score", 10)
+	}
+	if 0 > plain.Score {
+		return fmt.Errorf("field %s: must be >= %v", "score", 0)
+	}
+	*j = DimensionScore(plain)
+	return nil
+}
+
 // 平台指标，各平台字段不齐，缺失置 null
 type EngagementMetrics struct {
 	// Comments corresponds to the JSON schema field "comments".
@@ -567,6 +608,36 @@ func (j *EvaluationCore) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s: must be >= %v", "totalScore", 0)
 	}
 	*j = EvaluationCore(plain)
+	return nil
+}
+
+type FullTextStrategy string
+
+const FullTextStrategyFetchPage FullTextStrategy = "fetch_page"
+const FullTextStrategyRssDescription FullTextStrategy = "rss_description"
+
+var enumValues_FullTextStrategy = []interface{}{
+	"rss_description",
+	"fetch_page",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *FullTextStrategy) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_FullTextStrategy {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_FullTextStrategy, v)
+	}
+	*j = FullTextStrategy(v)
 	return nil
 }
 
@@ -1358,6 +1429,42 @@ func (j *RubricDimension) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// 全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。
+type SchedulerSettings struct {
+	// SourceFetch corresponds to the JSON schema field "sourceFetch".
+	SourceFetch SourceFetchSchedule `json:"sourceFetch" yaml:"sourceFetch" mapstructure:"sourceFetch"`
+
+	// TopicEvaluate corresponds to the JSON schema field "topicEvaluate".
+	TopicEvaluate TopicEvaluateSchedule `json:"topicEvaluate" yaml:"topicEvaluate" mapstructure:"topicEvaluate"`
+
+	// TopicScout corresponds to the JSON schema field "topicScout".
+	TopicScout TopicScoutSchedule `json:"topicScout" yaml:"topicScout" mapstructure:"topicScout"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SchedulerSettings) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["sourceFetch"]; raw != nil && !ok {
+		return fmt.Errorf("field sourceFetch in SchedulerSettings: required")
+	}
+	if _, ok := raw["topicEvaluate"]; raw != nil && !ok {
+		return fmt.Errorf("field topicEvaluate in SchedulerSettings: required")
+	}
+	if _, ok := raw["topicScout"]; raw != nil && !ok {
+		return fmt.Errorf("field topicScout in SchedulerSettings: required")
+	}
+	type Plain SchedulerSettings
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = SchedulerSettings(plain)
+	return nil
+}
+
 // scholars-ai 契约单一事实来源（SPEC-002 实体 / SPEC-001§3 job / SPEC-004 rubric
 // 结构）。修改本文件后必须运行 scripts/generate.sh 重新生成三端代码。
 type ScholarsSchemaJson map[string]interface{}
@@ -1423,7 +1530,64 @@ func (j *SourceCategory) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type SourceFetchConfig map[string]interface{}
+// 单个信源的采集配置（SPEC-008 §3.1）。intervalMinutes
+// 为空表示沿用全局默认；不为空即覆盖全局。additionalProperties 保持开放以便加源专属开关而不破契约。
+type SourceFetchConfig struct {
+	// FullText corresponds to the JSON schema field "fullText".
+	FullText *FullTextStrategy `json:"fullText,omitempty,omitzero" yaml:"fullText,omitempty" mapstructure:"fullText,omitempty"`
+
+	// 覆盖全局采集间隔；null/缺省=沿用全局默认（SPEC-008 §3.1）
+	IntervalMinutes SourceFetchConfigIntervalMinutes `json:"intervalMinutes,omitempty,omitzero" yaml:"intervalMinutes,omitempty" mapstructure:"intervalMinutes,omitempty"`
+
+	// 早于此天数的条目直接丢弃且不做 embedding（省额度）
+	MaxAgeDays *int `json:"maxAgeDays,omitempty,omitzero" yaml:"maxAgeDays,omitempty" mapstructure:"maxAgeDays,omitempty"`
+
+	// 单次采集条目上限。arXiv 类源单次返回数百条，必须限量
+	MaxItems *int `json:"maxItems,omitempty,omitzero" yaml:"maxItems,omitempty" mapstructure:"maxItems,omitempty"`
+
+	// Role corresponds to the JSON schema field "role".
+	Role *SourceRole `json:"role,omitempty,omitzero" yaml:"role,omitempty" mapstructure:"role,omitempty"`
+
+	AdditionalProperties interface{} `mapstructure:",remain"`
+}
+
+// 覆盖全局采集间隔；null/缺省=沿用全局默认（SPEC-008 §3.1）
+type SourceFetchConfigIntervalMinutes *int
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SourceFetchConfig) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	type Plain SourceFetchConfig
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.MaxAgeDays != nil && 365 < *plain.MaxAgeDays {
+		return fmt.Errorf("field %s: must be <= %v", "maxAgeDays", 365)
+	}
+	if plain.MaxAgeDays != nil && 1 > *plain.MaxAgeDays {
+		return fmt.Errorf("field %s: must be >= %v", "maxAgeDays", 1)
+	}
+	if plain.MaxItems != nil && 500 < *plain.MaxItems {
+		return fmt.Errorf("field %s: must be <= %v", "maxItems", 500)
+	}
+	if plain.MaxItems != nil && 1 > *plain.MaxItems {
+		return fmt.Errorf("field %s: must be >= %v", "maxItems", 1)
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := range st.NumField() {
+		delete(raw, st.Field(i).Name)
+		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return err
+	}
+	*j = SourceFetchConfig(plain)
+	return nil
+}
 
 // queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）
 type SourceFetchJob struct {
@@ -1446,6 +1610,131 @@ func (j *SourceFetchJob) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	*j = SourceFetchJob(plain)
+	return nil
+}
+
+// 采集调度：全局默认间隔，可被 sources.fetchConfig.intervalMinutes 逐源覆盖
+type SourceFetchSchedule struct {
+	// 下限 5 分钟：防止误配成高频轮询触发上游限流（RSSHub / X 尤其敏感）
+	DefaultIntervalMinutes int `json:"defaultIntervalMinutes" yaml:"defaultIntervalMinutes" mapstructure:"defaultIntervalMinutes"`
+
+	// Enabled corresponds to the JSON schema field "enabled".
+	Enabled bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SourceFetchSchedule) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["defaultIntervalMinutes"]; raw != nil && !ok {
+		return fmt.Errorf("field defaultIntervalMinutes in SourceFetchSchedule: required")
+	}
+	if _, ok := raw["enabled"]; raw != nil && !ok {
+		return fmt.Errorf("field enabled in SourceFetchSchedule: required")
+	}
+	type Plain SourceFetchSchedule
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 10080 < plain.DefaultIntervalMinutes {
+		return fmt.Errorf("field %s: must be <= %v", "defaultIntervalMinutes", 10080)
+	}
+	if 5 > plain.DefaultIntervalMinutes {
+		return fmt.Errorf("field %s: must be >= %v", "defaultIntervalMinutes", 5)
+	}
+	*j = SourceFetchSchedule(plain)
+	return nil
+}
+
+// 信源采集健康状态（client 信源管理页展示；连续失败需告警）
+type SourceHealth struct {
+	// ConsecutiveFailures corresponds to the JSON schema field "consecutiveFailures".
+	ConsecutiveFailures int `json:"consecutiveFailures" yaml:"consecutiveFailures" mapstructure:"consecutiveFailures"`
+
+	// LastError corresponds to the JSON schema field "lastError".
+	LastError SourceHealthLastError `json:"lastError" yaml:"lastError" mapstructure:"lastError"`
+
+	// LastRunAt corresponds to the JSON schema field "lastRunAt".
+	LastRunAt *time.Time `json:"lastRunAt" yaml:"lastRunAt" mapstructure:"lastRunAt"`
+
+	// LastSuccessAt corresponds to the JSON schema field "lastSuccessAt".
+	LastSuccessAt *time.Time `json:"lastSuccessAt" yaml:"lastSuccessAt" mapstructure:"lastSuccessAt"`
+
+	// NextRunAt corresponds to the JSON schema field "nextRunAt".
+	NextRunAt *time.Time `json:"nextRunAt" yaml:"nextRunAt" mapstructure:"nextRunAt"`
+
+	// SourceId corresponds to the JSON schema field "sourceId".
+	SourceId string `json:"sourceId" yaml:"sourceId" mapstructure:"sourceId"`
+}
+
+type SourceHealthLastError *string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SourceHealth) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["consecutiveFailures"]; raw != nil && !ok {
+		return fmt.Errorf("field consecutiveFailures in SourceHealth: required")
+	}
+	if _, ok := raw["lastError"]; raw != nil && !ok {
+		return fmt.Errorf("field lastError in SourceHealth: required")
+	}
+	if _, ok := raw["lastRunAt"]; raw != nil && !ok {
+		return fmt.Errorf("field lastRunAt in SourceHealth: required")
+	}
+	if _, ok := raw["lastSuccessAt"]; raw != nil && !ok {
+		return fmt.Errorf("field lastSuccessAt in SourceHealth: required")
+	}
+	if _, ok := raw["nextRunAt"]; raw != nil && !ok {
+		return fmt.Errorf("field nextRunAt in SourceHealth: required")
+	}
+	if _, ok := raw["sourceId"]; raw != nil && !ok {
+		return fmt.Errorf("field sourceId in SourceHealth: required")
+	}
+	type Plain SourceHealth
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 0 > plain.ConsecutiveFailures {
+		return fmt.Errorf("field %s: must be >= %v", "consecutiveFailures", 0)
+	}
+	*j = SourceHealth(plain)
+	return nil
+}
+
+type SourceRole string
+
+const SourceRoleMaterial SourceRole = "material"
+const SourceRoleSignal SourceRole = "signal"
+
+var enumValues_SourceRole = []interface{}{
+	"material",
+	"signal",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SourceRole) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_SourceRole {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_SourceRole, v)
+	}
+	*j = SourceRole(v)
 	return nil
 }
 
@@ -1560,6 +1849,71 @@ type Topic struct {
 	Title string `json:"title" yaml:"title" mapstructure:"title"`
 }
 
+type TopicDraft struct {
+	// 切入角度：同一事件对小红书和知乎的写法角度可能完全不同
+	Angle string `json:"angle" yaml:"angle" mapstructure:"angle"`
+
+	// RawItemIds corresponds to the JSON schema field "rawItemIds".
+	RawItemIds []string `json:"rawItemIds" yaml:"rawItemIds" mapstructure:"rawItemIds"`
+
+	// 选题简介 + 素材要点
+	Summary string `json:"summary" yaml:"summary" mapstructure:"summary"`
+
+	// TargetPlatforms corresponds to the JSON schema field "targetPlatforms".
+	TargetPlatforms []Platform `json:"targetPlatforms" yaml:"targetPlatforms" mapstructure:"targetPlatforms"`
+
+	// Title corresponds to the JSON schema field "title".
+	Title string `json:"title" yaml:"title" mapstructure:"title"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TopicDraft) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["angle"]; raw != nil && !ok {
+		return fmt.Errorf("field angle in TopicDraft: required")
+	}
+	if _, ok := raw["rawItemIds"]; raw != nil && !ok {
+		return fmt.Errorf("field rawItemIds in TopicDraft: required")
+	}
+	if _, ok := raw["summary"]; raw != nil && !ok {
+		return fmt.Errorf("field summary in TopicDraft: required")
+	}
+	if _, ok := raw["targetPlatforms"]; raw != nil && !ok {
+		return fmt.Errorf("field targetPlatforms in TopicDraft: required")
+	}
+	if _, ok := raw["title"]; raw != nil && !ok {
+		return fmt.Errorf("field title in TopicDraft: required")
+	}
+	type Plain TopicDraft
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain.Angle)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "angle", 1)
+	}
+	if plain.RawItemIds != nil && len(plain.RawItemIds) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "rawItemIds", 1)
+	}
+	if utf8.RuneCountInString(string(plain.Summary)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "summary", 1)
+	}
+	if plain.TargetPlatforms != nil && len(plain.TargetPlatforms) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "targetPlatforms", 1)
+	}
+	if utf8.RuneCountInString(string(plain.Title)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "title", 1)
+	}
+	if utf8.RuneCountInString(string(plain.Title)) > 200 {
+		return fmt.Errorf("field %s length: must be <= %d", "title", 200)
+	}
+	*j = TopicDraft(plain)
+	return nil
+}
+
 // queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
 type TopicEvaluateJob struct {
 	// 缺省用当前生效版本
@@ -1587,7 +1941,143 @@ func (j *TopicEvaluateJob) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// 评分调度：**事件驱动**，candidate 产生即投递，不设固定时刻（SPEC-008 §3.1 纪律 2）
+type TopicEvaluateSchedule struct {
+	// 每日 token 上限，超限停止消费并告警；null=不限
+	DailyTokenBudget TopicEvaluateScheduleDailyTokenBudget `json:"dailyTokenBudget" yaml:"dailyTokenBudget" mapstructure:"dailyTokenBudget"`
+
+	// Enabled corresponds to the JSON schema field "enabled".
+	Enabled bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+
+	// MaxConcurrency corresponds to the JSON schema field "maxConcurrency".
+	MaxConcurrency int `json:"maxConcurrency" yaml:"maxConcurrency" mapstructure:"maxConcurrency"`
+}
+
+// 每日 token 上限，超限停止消费并告警；null=不限
+type TopicEvaluateScheduleDailyTokenBudget *int
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TopicEvaluateSchedule) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["dailyTokenBudget"]; raw != nil && !ok {
+		return fmt.Errorf("field dailyTokenBudget in TopicEvaluateSchedule: required")
+	}
+	if _, ok := raw["enabled"]; raw != nil && !ok {
+		return fmt.Errorf("field enabled in TopicEvaluateSchedule: required")
+	}
+	if _, ok := raw["maxConcurrency"]; raw != nil && !ok {
+		return fmt.Errorf("field maxConcurrency in TopicEvaluateSchedule: required")
+	}
+	type Plain TopicEvaluateSchedule
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 32 < plain.MaxConcurrency {
+		return fmt.Errorf("field %s: must be <= %v", "maxConcurrency", 32)
+	}
+	if 1 > plain.MaxConcurrency {
+		return fmt.Errorf("field %s: must be >= %v", "maxConcurrency", 1)
+	}
+	*j = TopicEvaluateSchedule(plain)
+	return nil
+}
+
 type TopicEvaluation interface{}
+
+// TopicJudge 的结构化输出契约（供 runtime.complete_structured 校验）。**维度 key 必须与
+// rubrics/topic.v1.yaml 完全一致**——rubric 是唯一事实来源，此处不得另立一套。totalScore
+// 由代码按生效权重重算，不信任模型自报（SPEC-004 §1.2）。
+type TopicJudgeOutput struct {
+	// DimensionScores corresponds to the JSON schema field "dimensionScores".
+	DimensionScores TopicJudgeOutputDimensionScores `json:"dimensionScores" yaml:"dimensionScores" mapstructure:"dimensionScores"`
+
+	// 人可读的总体评审理由：评分不可信时人要能一眼看出是 rubric 问题还是模型问题（SPEC-004 §1.5）
+	Rationale string `json:"rationale" yaml:"rationale" mapstructure:"rationale"`
+
+	// Judge 认为该选题更适合的平台（可与 TopicScout 的建议不同）
+	SuggestedPlatforms []Platform `json:"suggestedPlatforms,omitempty,omitzero" yaml:"suggestedPlatforms,omitempty" mapstructure:"suggestedPlatforms,omitempty"`
+}
+
+type TopicJudgeOutputDimensionScores struct {
+	// AudienceValue corresponds to the JSON schema field "audience_value".
+	AudienceValue DimensionScore `json:"audience_value" yaml:"audience_value" mapstructure:"audience_value"`
+
+	// Differentiation corresponds to the JSON schema field "differentiation".
+	Differentiation DimensionScore `json:"differentiation" yaml:"differentiation" mapstructure:"differentiation"`
+
+	// HistorySignal corresponds to the JSON schema field "history_signal".
+	HistorySignal DimensionScore `json:"history_signal" yaml:"history_signal" mapstructure:"history_signal"`
+
+	// MaterialRichness corresponds to the JSON schema field "material_richness".
+	MaterialRichness DimensionScore `json:"material_richness" yaml:"material_richness" mapstructure:"material_richness"`
+
+	// PlatformFit corresponds to the JSON schema field "platform_fit".
+	PlatformFit DimensionScore `json:"platform_fit" yaml:"platform_fit" mapstructure:"platform_fit"`
+
+	// Timeliness corresponds to the JSON schema field "timeliness".
+	Timeliness DimensionScore `json:"timeliness" yaml:"timeliness" mapstructure:"timeliness"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TopicJudgeOutputDimensionScores) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["audience_value"]; raw != nil && !ok {
+		return fmt.Errorf("field audience_value in TopicJudgeOutputDimensionScores: required")
+	}
+	if _, ok := raw["differentiation"]; raw != nil && !ok {
+		return fmt.Errorf("field differentiation in TopicJudgeOutputDimensionScores: required")
+	}
+	if _, ok := raw["history_signal"]; raw != nil && !ok {
+		return fmt.Errorf("field history_signal in TopicJudgeOutputDimensionScores: required")
+	}
+	if _, ok := raw["material_richness"]; raw != nil && !ok {
+		return fmt.Errorf("field material_richness in TopicJudgeOutputDimensionScores: required")
+	}
+	if _, ok := raw["platform_fit"]; raw != nil && !ok {
+		return fmt.Errorf("field platform_fit in TopicJudgeOutputDimensionScores: required")
+	}
+	if _, ok := raw["timeliness"]; raw != nil && !ok {
+		return fmt.Errorf("field timeliness in TopicJudgeOutputDimensionScores: required")
+	}
+	type Plain TopicJudgeOutputDimensionScores
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = TopicJudgeOutputDimensionScores(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TopicJudgeOutput) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["dimensionScores"]; raw != nil && !ok {
+		return fmt.Errorf("field dimensionScores in TopicJudgeOutput: required")
+	}
+	if _, ok := raw["rationale"]; raw != nil && !ok {
+		return fmt.Errorf("field rationale in TopicJudgeOutput: required")
+	}
+	type Plain TopicJudgeOutput
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain.Rationale)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "rationale", 1)
+	}
+	*j = TopicJudgeOutput(plain)
+	return nil
+}
 
 type TopicLatestScore *float64
 
@@ -1608,6 +2098,93 @@ func (j *TopicScoutJob) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s: must be >= %v", "maxTopics", 1)
 	}
 	*j = TopicScoutJob(plain)
+	return nil
+}
+
+// TopicScout 的结构化输出契约：一簇素材 → 1–3 个选题角度（SPEC-003 §4）
+type TopicScoutOutput struct {
+	// 本簇未产出任何选题时的原因（留痕，便于调 prompt）
+	DiscardReason *string `json:"discardReason,omitempty,omitzero" yaml:"discardReason,omitempty" mapstructure:"discardReason,omitempty"`
+
+	// Topics corresponds to the JSON schema field "topics".
+	Topics []TopicDraft `json:"topics" yaml:"topics" mapstructure:"topics"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TopicScoutOutput) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["topics"]; raw != nil && !ok {
+		return fmt.Errorf("field topics in TopicScoutOutput: required")
+	}
+	type Plain TopicScoutOutput
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if len(plain.Topics) > 3 {
+		return fmt.Errorf("field %s length: must be <= %d", "topics", 3)
+	}
+	*j = TopicScoutOutput(plain)
+	return nil
+}
+
+// 选题聚合调度：按每日固定时刻触发
+type TopicScoutSchedule struct {
+	// Enabled corresponds to the JSON schema field "enabled".
+	Enabled bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+
+	// 新素材不足此数则跳过本次运行并留痕（避免为几条素材烧一次 LLM）
+	MinNewItems int `json:"minNewItems" yaml:"minNewItems" mapstructure:"minNewItems"`
+
+	// 每日执行时刻（HH:MM，24 小时制）。client 用表单生成，不让用户手写 cron 表达式
+	Times []string `json:"times" yaml:"times" mapstructure:"times"`
+
+	// IANA 时区名，如 Asia/Shanghai
+	Timezone string `json:"timezone" yaml:"timezone" mapstructure:"timezone"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TopicScoutSchedule) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["enabled"]; raw != nil && !ok {
+		return fmt.Errorf("field enabled in TopicScoutSchedule: required")
+	}
+	if _, ok := raw["minNewItems"]; raw != nil && !ok {
+		return fmt.Errorf("field minNewItems in TopicScoutSchedule: required")
+	}
+	if _, ok := raw["times"]; raw != nil && !ok {
+		return fmt.Errorf("field times in TopicScoutSchedule: required")
+	}
+	if _, ok := raw["timezone"]; raw != nil && !ok {
+		return fmt.Errorf("field timezone in TopicScoutSchedule: required")
+	}
+	type Plain TopicScoutSchedule
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 1000 < plain.MinNewItems {
+		return fmt.Errorf("field %s: must be <= %v", "minNewItems", 1000)
+	}
+	if 0 > plain.MinNewItems {
+		return fmt.Errorf("field %s: must be >= %v", "minNewItems", 0)
+	}
+	if plain.Times != nil && len(plain.Times) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "times", 1)
+	}
+	if len(plain.Times) > 24 {
+		return fmt.Errorf("field %s length: must be <= %d", "times", 24)
+	}
+	if utf8.RuneCountInString(string(plain.Timezone)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "timezone", 1)
+	}
+	*j = TopicScoutSchedule(plain)
 	return nil
 }
 

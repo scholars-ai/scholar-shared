@@ -69,8 +69,30 @@
         "category": { "$ref": "#/definitions/SourceCategory" },
         "weight": { "description": "信源质量权重 0–1，被反馈闭环校准（SPEC-006 §5）", "type": "number", "minimum": 0, "maximum": 1 },
         "enabled": { "type": "boolean" },
-        "fetchConfig": { "type": "object", "additionalProperties": true }
+        "fetchConfig": { "$ref": "#/definitions/SourceFetchConfig" }
       }
+    },
+    "SourceFetchConfig": {
+      "description": "单个信源的采集配置（SPEC-008 §3.1）。intervalMinutes 为空表示沿用全局默认；不为空即覆盖全局。additionalProperties 保持开放以便加源专属开关而不破契约。",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "role": { "$ref": "#/definitions/SourceRole" },
+        "fullText": { "$ref": "#/definitions/FullTextStrategy" },
+        "maxItems": { "description": "单次采集条目上限。arXiv 类源单次返回数百条，必须限量", "type": "integer", "minimum": 1, "maximum": 500 },
+        "maxAgeDays": { "description": "早于此天数的条目直接丢弃且不做 embedding（省额度）", "type": "integer", "minimum": 1, "maximum": 365 },
+        "intervalMinutes": { "description": "覆盖全局采集间隔；null/缺省=沿用全局默认（SPEC-008 §3.1）", "type": ["integer", "null"], "minimum": 5, "maximum": 10080 }
+      }
+    },
+    "SourceRole": {
+      "description": "material=能拿到原文，可作写作素材；signal=只有二手摘要，仅供发现（SPEC-003 §2.1）",
+      "type": "string",
+      "enum": ["material", "signal"]
+    },
+    "FullTextStrategy": {
+      "description": "rss_description=RSS 自带正文足够；fetch_page=需抓原文页（trafilatura）",
+      "type": "string",
+      "enum": ["rss_description", "fetch_page"]
     },
     "RawItem": {
       "description": "原始采集条目",
@@ -339,6 +361,134 @@
       }
     },
 
+    "SchedulerSettings": {
+      "description": "全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceFetch", "topicScout", "topicEvaluate"],
+      "properties": {
+        "sourceFetch": { "$ref": "#/definitions/SourceFetchSchedule" },
+        "topicScout": { "$ref": "#/definitions/TopicScoutSchedule" },
+        "topicEvaluate": { "$ref": "#/definitions/TopicEvaluateSchedule" }
+      }
+    },
+    "SourceFetchSchedule": {
+      "description": "采集调度：全局默认间隔，可被 sources.fetchConfig.intervalMinutes 逐源覆盖",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "defaultIntervalMinutes"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "defaultIntervalMinutes": { "description": "下限 5 分钟：防止误配成高频轮询触发上游限流（RSSHub / X 尤其敏感）", "type": "integer", "minimum": 5, "maximum": 10080 }
+      }
+    },
+    "TopicScoutSchedule": {
+      "description": "选题聚合调度：按每日固定时刻触发",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "times", "timezone", "minNewItems"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "times": {
+          "description": "每日执行时刻（HH:MM，24 小时制）。client 用表单生成，不让用户手写 cron 表达式",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+        },
+        "timezone": { "description": "IANA 时区名，如 Asia/Shanghai", "type": "string", "minLength": 1 },
+        "minNewItems": { "description": "新素材不足此数则跳过本次运行并留痕（避免为几条素材烧一次 LLM）", "type": "integer", "minimum": 0, "maximum": 1000 }
+      }
+    },
+    "TopicEvaluateSchedule": {
+      "description": "评分调度：**事件驱动**，candidate 产生即投递，不设固定时刻（SPEC-008 §3.1 纪律 2）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "maxConcurrency", "dailyTokenBudget"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "dailyTokenBudget": { "description": "每日 token 上限，超限停止消费并告警；null=不限", "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "SourceHealth": {
+      "description": "信源采集健康状态（client 信源管理页展示；连续失败需告警）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "lastRunAt", "lastSuccessAt", "consecutiveFailures", "lastError", "nextRunAt"],
+      "properties": {
+        "sourceId": { "type": "string", "format": "uuid" },
+        "lastRunAt": { "type": ["string", "null"], "format": "date-time" },
+        "lastSuccessAt": { "type": ["string", "null"], "format": "date-time" },
+        "consecutiveFailures": { "type": "integer", "minimum": 0 },
+        "lastError": { "type": ["string", "null"] },
+        "nextRunAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "TopicJudgeOutput": {
+      "description": "TopicJudge 的结构化输出契约（供 runtime.complete_structured 校验）。**维度 key 必须与 rubrics/topic.v1.yaml 完全一致**——rubric 是唯一事实来源，此处不得另立一套。totalScore 由代码按生效权重重算，不信任模型自报（SPEC-004 §1.2）。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimensionScores", "rationale"],
+      "properties": {
+        "dimensionScores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["timeliness", "audience_value", "platform_fit", "differentiation", "material_richness", "history_signal"],
+          "properties": {
+            "timeliness": { "$ref": "#/definitions/DimensionScore" },
+            "audience_value": { "$ref": "#/definitions/DimensionScore" },
+            "platform_fit": { "$ref": "#/definitions/DimensionScore" },
+            "differentiation": { "$ref": "#/definitions/DimensionScore" },
+            "material_richness": { "$ref": "#/definitions/DimensionScore" },
+            "history_signal": { "$ref": "#/definitions/DimensionScore" }
+          }
+        },
+        "rationale": { "description": "人可读的总体评审理由：评分不可信时人要能一眼看出是 rubric 问题还是模型问题（SPEC-004 §1.5）", "type": "string", "minLength": 1 },
+        "suggestedPlatforms": {
+          "description": "Judge 认为该选题更适合的平台（可与 TopicScout 的建议不同）",
+          "type": "array",
+          "items": { "$ref": "#/definitions/Platform" }
+        }
+      }
+    },
+    "DimensionScore": {
+      "description": "单维度评分：分数 + 该维度的具体理由（强制逐维给理由，抑制笼统打分）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "reason"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 10 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "TopicScoutOutput": {
+      "description": "TopicScout 的结构化输出契约：一簇素材 → 1–3 个选题角度（SPEC-003 §4）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topics"],
+      "properties": {
+        "topics": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 3,
+          "items": { "$ref": "#/definitions/TopicDraft" }
+        },
+        "discardReason": { "description": "本簇未产出任何选题时的原因（留痕，便于调 prompt）", "type": "string" }
+      }
+    },
+    "TopicDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "angle", "summary", "rawItemIds", "targetPlatforms"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "angle": { "description": "切入角度：同一事件对小红书和知乎的写法角度可能完全不同", "type": "string", "minLength": 1 },
+        "summary": { "description": "选题简介 + 素材要点", "type": "string", "minLength": 1 },
+        "rawItemIds": { "type": "array", "minItems": 1, "items": { "type": "string", "format": "uuid" } },
+        "targetPlatforms": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/Platform" } }
+      }
+    },
     "RubricAnchor": {
       "description": "锚定样例：抑制 LLM 评分中心化（SPEC-004 §1.3）",
       "type": "object",

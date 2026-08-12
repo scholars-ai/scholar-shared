@@ -82,11 +82,238 @@ paths:
                 $ref: "#/components/schemas/Topic"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/topics/{topicId}/evaluations:
+    get:
+      operationId: listTopicEvaluations
+      summary: 选题的评分历史（维度分 + 理由 + rubric/权重版本，倒序）
+      parameters:
+        - $ref: "#/components/parameters/TopicId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopicEvaluation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/topics/{topicId}/approve:
+    post:
+      operationId: approveTopic
+      summary: 人工确认选题（scored → approved）
+      parameters:
+        - $ref: "#/components/parameters/TopicId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /v1/topics/{topicId}/reject:
+    post:
+      operationId: rejectTopic
+      summary: 人工否决选题（candidate/scored → rejected）
+      parameters:
+        - $ref: "#/components/parameters/TopicId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectTopicRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/sources:
+    get:
+      operationId: listSources
+      summary: 信源列表（含采集健康状态）
+      parameters:
+        - name: enabled
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SourceWithHealth"
+    post:
+      operationId: createSource
+      summary: 新增信源
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Source"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /v1/sources/{sourceId}:
+    get:
+      operationId: getSource
+      summary: 信源详情
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceWithHealth"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateSource
+      summary: 修改信源（含启停与单独采集频率覆盖）
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourcePatch"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Source"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteSource
+      summary: 删除信源（已采集的 raw_items 保留，仅解除订阅）
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/sources/{sourceId}/fetch:
+    post:
+      operationId: triggerSourceFetch
+      summary: 立即采集该信源（不等调度）
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "202":
+          description: 已入队
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobAccepted"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/ingest/url:
+    post:
+      operationId: ingestUrl
+      summary: 手动投喂 URL（刷到好东西时的一键入口，SPEC-003 §2.2）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestUrlRequest"
+      responses:
+        "202":
+          description: 已入队
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/settings/schedules:
+    get:
+      operationId: getSchedulerSettings
+      summary: 读调度设置
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerSettings"
+    patch:
+      operationId: updateSchedulerSettings
+      summary: 改调度设置（≤ 1 个 tick 生效；重启不被环境变量覆盖）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulerSettingsPatch"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerSettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/scout/run:
+    post:
+      operationId: triggerTopicScout
+      summary: 立即跑一次选题聚合（不等调度；忽略 minNewItems）
+      responses:
+        "202":
+          description: 已入队
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobAccepted"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
 components:
   parameters:
     TopicId:
       name: topicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SourceId:
+      name: sourceId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -99,6 +326,12 @@ components:
             $ref: "#/components/schemas/Error"
     NotFound:
       description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: 与当前状态冲突（如非法状态流转、重名信源、功能已停用）
       content:
         application/json:
           schema:
@@ -157,3 +390,193 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/Platform"
+    RejectTopicRequest:
+      type: object
+      properties:
+        reason: { type: string, description: 否决原因（留痕，供后续 rubric 校准参考） }
+
+    TopicEvaluation:
+      type: object
+      required: [id, topicId, rubricVersion, weightVersion, dimensionScores, totalScore, rationale, judgeModel, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        topicId: { type: string, format: uuid }
+        rubricVersion: { type: string, description: 如 topic@v1 }
+        weightVersion:
+          type: integer
+          nullable: true
+          description: 生效权重版本（weight_sets.version），使评分可回放
+        dimensionScores:
+          type: object
+          additionalProperties: { type: number, minimum: 0, maximum: 10 }
+        dimensionReasons:
+          type: object
+          additionalProperties: { type: string }
+          description: 逐维度理由
+        totalScore: { type: number, minimum: 0, maximum: 100 }
+        rationale: { type: string }
+        judgeModel: { type: string }
+        vetoedDimension:
+          type: string
+          nullable: true
+          description: 触发一票否决的维度 key（topic@v1 暂无 veto 维度，但字段就位）
+        agentRunId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt: { type: string, format: date-time }
+
+    SourceType:
+      type: string
+      enum: [rss, rsshub, manual, crawler]
+    SourceCategory:
+      type: string
+      enum: [news, research, tutorial, kol]
+    SourceRole:
+      type: string
+      enum: [material, signal]
+    FullTextStrategy:
+      type: string
+      enum: [rss_description, fetch_page]
+    SourceFetchConfig:
+      type: object
+      description: 单源采集配置；intervalMinutes 为空表示沿用全局默认
+      properties:
+        role:
+          $ref: "#/components/schemas/SourceRole"
+        fullText:
+          $ref: "#/components/schemas/FullTextStrategy"
+        maxItems: { type: integer, minimum: 1, maximum: 500 }
+        maxAgeDays: { type: integer, minimum: 1, maximum: 365 }
+        intervalMinutes:
+          type: integer
+          nullable: true
+          minimum: 5
+          maximum: 10080
+    Source:
+      type: object
+      required: [id, name, type, url, category, weight, enabled, fetchConfig]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1 }
+        type:
+          $ref: "#/components/schemas/SourceType"
+        url:
+          type: string
+          nullable: true
+        category:
+          $ref: "#/components/schemas/SourceCategory"
+        weight: { type: number, minimum: 0, maximum: 1 }
+        enabled: { type: boolean }
+        fetchConfig:
+          $ref: "#/components/schemas/SourceFetchConfig"
+    SourceHealth:
+      type: object
+      required: [consecutiveFailures]
+      properties:
+        lastRunAt: { type: string, format: date-time, nullable: true }
+        lastSuccessAt: { type: string, format: date-time, nullable: true }
+        nextRunAt: { type: string, format: date-time, nullable: true }
+        consecutiveFailures: { type: integer, minimum: 0 }
+        lastError: { type: string, nullable: true }
+        itemCount: { type: integer, minimum: 0, description: 该源累计入库条目数 }
+    SourceWithHealth:
+      allOf:
+        - $ref: "#/components/schemas/Source"
+        - type: object
+          required: [health]
+          properties:
+            health:
+              $ref: "#/components/schemas/SourceHealth"
+    SourceInput:
+      type: object
+      required: [name, type, category]
+      properties:
+        name: { type: string, minLength: 1 }
+        type:
+          $ref: "#/components/schemas/SourceType"
+        url:
+          type: string
+          nullable: true
+        category:
+          $ref: "#/components/schemas/SourceCategory"
+        weight: { type: number, minimum: 0, maximum: 1, default: 0.5 }
+        enabled: { type: boolean, default: true }
+        fetchConfig:
+          $ref: "#/components/schemas/SourceFetchConfig"
+    SourcePatch:
+      type: object
+      description: 仅传需要改的字段
+      properties:
+        name: { type: string, minLength: 1 }
+        url:
+          type: string
+          nullable: true
+        category:
+          $ref: "#/components/schemas/SourceCategory"
+        weight: { type: number, minimum: 0, maximum: 1 }
+        enabled: { type: boolean }
+        fetchConfig:
+          $ref: "#/components/schemas/SourceFetchConfig"
+
+    IngestUrlRequest:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string, format: uri }
+        note: { type: string, description: 备注（为什么觉得这条值得写） }
+    JobAccepted:
+      type: object
+      required: [queue, msgId]
+      properties:
+        queue: { type: string }
+        msgId: { type: integer, format: int64 }
+
+    SourceFetchSchedule:
+      type: object
+      required: [enabled, defaultIntervalMinutes]
+      properties:
+        enabled: { type: boolean }
+        defaultIntervalMinutes: { type: integer, minimum: 5, maximum: 10080 }
+    TopicScoutSchedule:
+      type: object
+      required: [enabled, times, timezone, minNewItems]
+      properties:
+        enabled: { type: boolean }
+        times:
+          type: array
+          minItems: 1
+          maxItems: 24
+          items: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+        timezone: { type: string, minLength: 1 }
+        minNewItems: { type: integer, minimum: 0, maximum: 1000 }
+    TopicEvaluateSchedule:
+      type: object
+      required: [enabled, maxConcurrency, dailyTokenBudget]
+      properties:
+        enabled: { type: boolean }
+        maxConcurrency: { type: integer, minimum: 1, maximum: 32 }
+        dailyTokenBudget:
+          type: integer
+          nullable: true
+          minimum: 0
+    SchedulerSettings:
+      type: object
+      required: [sourceFetch, topicScout, topicEvaluate]
+      properties:
+        sourceFetch:
+          $ref: "#/components/schemas/SourceFetchSchedule"
+        topicScout:
+          $ref: "#/components/schemas/TopicScoutSchedule"
+        topicEvaluate:
+          $ref: "#/components/schemas/TopicEvaluateSchedule"
+    SchedulerSettingsPatch:
+      type: object
+      description: 仅传需要改的分组
+      properties:
+        sourceFetch:
+          $ref: "#/components/schemas/SourceFetchSchedule"
+        topicScout:
+          $ref: "#/components/schemas/TopicScoutSchedule"
+        topicEvaluate:
+          $ref: "#/components/schemas/TopicEvaluateSchedule"

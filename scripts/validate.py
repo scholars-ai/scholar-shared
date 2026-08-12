@@ -64,6 +64,44 @@ queues = json.loads((ROOT / "schemas/queues.json").read_text())["queues"]
 for q, def_name in queues.items():
     check(f"queue {q} -> {def_name} exists", def_name in DEFS)
 
+# 5. Judge 结构化输出的维度必须与 rubric 完全一致。
+#    rubric 是唯一事实来源；若两处漂移，评分会静默丢维度或报错，且历史分数不可比。
+JUDGE_OUTPUT_TO_RUBRIC = {"TopicJudgeOutput": "rubrics/topic.v1.yaml"}
+for out_def, rubric_path in JUDGE_OUTPUT_TO_RUBRIC.items():
+    rubric = yaml.safe_load((ROOT / rubric_path).read_text())
+    rubric_keys = {d["key"] for d in rubric["dimensions"]}
+    scores = DEFS[out_def]["properties"]["dimensionScores"]
+    schema_keys = set(scores["properties"])
+    check(
+        f"{out_def} dimensions == {rubric_path}",
+        schema_keys == rubric_keys,
+        f"schema-only={sorted(schema_keys - rubric_keys)} rubric-only={sorted(rubric_keys - schema_keys)}",
+    )
+    check(
+        f"{out_def} requires every dimension",
+        set(scores.get("required", [])) == rubric_keys,
+        f"required={sorted(scores.get('required', []))}",
+    )
+    check(
+        f"{out_def} forbids extra dimensions",
+        scores.get("additionalProperties") is False,
+        "additionalProperties 必须为 false，否则模型可臆造维度",
+    )
+
+# 6. 调度设置：默认值必须自身合法（core 首次 seed 会用它）
+sched_defaults = {
+    "sourceFetch": {"enabled": True, "defaultIntervalMinutes": 60},
+    "topicScout": {
+        "enabled": True,
+        "times": ["08:00", "20:00"],
+        "timezone": "Asia/Shanghai",
+        "minNewItems": 5,
+    },
+    "topicEvaluate": {"enabled": True, "maxConcurrency": 2, "dailyTokenBudget": 200000},
+}
+errs = list(validator_for("SchedulerSettings").iter_errors(sched_defaults))
+check("default SchedulerSettings is valid", not errs, "; ".join(e.message for e in errs[:3]))
+
 if failures:
     print(f"\n{len(failures)} check(s) failed", file=sys.stderr)
     sys.exit(1)
