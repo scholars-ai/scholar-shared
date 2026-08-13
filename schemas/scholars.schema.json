@@ -338,11 +338,17 @@
       }
     },
     "TopicScoutJob": {
-      "description": "queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）",
+      "description": "queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4；rawItemIds 用于手动投喂定向处理）",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "maxTopics": { "type": "integer", "minimum": 1 }
+        "maxTopics": { "type": "integer", "minimum": 1 },
+        "rawItemIds": {
+          "description": "仅处理指定的 new 素材；手动投喂链路使用",
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "format": "uuid" }
+        }
       }
     },
     "MemoryReflectJob": {

@@ -448,13 +448,17 @@ class SourceFetchJob(BaseModel):
 
 class TopicScoutJob(BaseModel):
     """
-    queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）
+    queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4；rawItemIds 用于手动投喂定向处理）
     """
 
     model_config = ConfigDict(
         extra='forbid',
     )
     maxTopics: conint(ge=1) | None = None
+    rawItemIds: list[UUID] | None = Field(None, min_length=1)
+    """
+    仅处理指定的 new 素材；手动投喂链路使用
+    """
 
 
 class MemoryReflectJob(BaseModel):

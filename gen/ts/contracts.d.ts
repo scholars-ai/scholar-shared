@@ -418,13 +418,19 @@ export interface SourceFetchJob {
   note?: string | null;
 }
 /**
- * queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）
+ * queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4；rawItemIds 用于手动投喂定向处理）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
  * via the `definition` "TopicScoutJob".
  */
 export interface TopicScoutJob {
   maxTopics?: number;
+  /**
+   * 仅处理指定的 new 素材；手动投喂链路使用
+   *
+   * @minItems 1
+   */
+  rawItemIds?: [string, ...string[]];
 }
 /**
  * queue: memory_reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）

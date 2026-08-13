@@ -2084,10 +2084,13 @@ func (j *TopicJudgeOutput) UnmarshalJSON(value []byte) error {
 
 type TopicLatestScore *float64
 
-// queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）
+// queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4；rawItemIds 用于手动投喂定向处理）
 type TopicScoutJob struct {
 	// MaxTopics corresponds to the JSON schema field "maxTopics".
 	MaxTopics *int `json:"maxTopics,omitempty,omitzero" yaml:"maxTopics,omitempty" mapstructure:"maxTopics,omitempty"`
+
+	// 仅处理指定的 new 素材；手动投喂链路使用
+	RawItemIds []string `json:"rawItemIds,omitempty,omitzero" yaml:"rawItemIds,omitempty" mapstructure:"rawItemIds,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2099,6 +2102,9 @@ func (j *TopicScoutJob) UnmarshalJSON(value []byte) error {
 	}
 	if plain.MaxTopics != nil && 1 > *plain.MaxTopics {
 		return fmt.Errorf("field %s: must be >= %v", "maxTopics", 1)
+	}
+	if plain.RawItemIds != nil && len(plain.RawItemIds) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "rawItemIds", 1)
 	}
 	*j = TopicScoutJob(plain)
 	return nil
