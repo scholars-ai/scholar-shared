@@ -211,6 +211,14 @@ class EvaluationCore(BaseModel):
 
 class TopicEvaluation(EvaluationCore):
     topicId: UUID
+    weightVersion: conint(ge=1) | None = None
+    """
+    评分时生效的 weight_sets.version，用于历史回放
+    """
+    vetoedDimension: str | None = None
+    """
+    触发一票否决的维度；没有 veto 时为空
+    """
 
 
 class ArticleEvaluation(EvaluationCore):

@@ -86,6 +86,14 @@ export type FullTextStrategy = "rss_description" | "fetch_page";
  */
 export type TopicEvaluation = EvaluationCore & {
   topicId: string;
+  /**
+   * 评分时生效的 weight_sets.version，用于历史回放
+   */
+  weightVersion?: number | null;
+  /**
+   * 触发一票否决的维度；没有 veto 时为空
+   */
+  vetoedDimension?: string | null;
   [k: string]: unknown;
 };
 /**

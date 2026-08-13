@@ -148,7 +148,11 @@
         {
           "type": "object",
           "required": ["topicId"],
-          "properties": { "topicId": { "type": "string", "format": "uuid" } }
+          "properties": {
+            "topicId": { "type": "string", "format": "uuid" },
+            "weightVersion": { "description": "评分时生效的 weight_sets.version，用于历史回放", "type": ["integer", "null"], "minimum": 1 },
+            "vetoedDimension": { "description": "触发一票否决的维度；没有 veto 时为空", "type": ["string", "null"] }
+          }
         }
       ]
     },
