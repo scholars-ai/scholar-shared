@@ -1591,9 +1591,21 @@ func (j *SourceFetchConfig) UnmarshalJSON(value []byte) error {
 
 // queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）
 type SourceFetchJob struct {
+	// 手动投喂备注，供留痕使用
+	Note SourceFetchJobNote `json:"note,omitempty,omitzero" yaml:"note,omitempty" mapstructure:"note,omitempty"`
+
 	// SourceId corresponds to the JSON schema field "sourceId".
 	SourceId string `json:"sourceId" yaml:"sourceId" mapstructure:"sourceId"`
+
+	// 手动投喂时只抓取这一条 URL；普通 source_fetch 不传
+	Url SourceFetchJobUrl `json:"url,omitempty,omitzero" yaml:"url,omitempty" mapstructure:"url,omitempty"`
 }
+
+// 手动投喂备注，供留痕使用
+type SourceFetchJobNote *string
+
+// 手动投喂时只抓取这一条 URL；普通 source_fetch 不传
+type SourceFetchJobUrl *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *SourceFetchJob) UnmarshalJSON(value []byte) error {

@@ -332,7 +332,9 @@
       "additionalProperties": false,
       "required": ["sourceId"],
       "properties": {
-        "sourceId": { "type": "string", "format": "uuid" }
+        "sourceId": { "type": "string", "format": "uuid" },
+        "url": { "description": "手动投喂时只抓取这一条 URL；普通 source_fetch 不传", "type": ["string", "null"], "format": "uri" },
+        "note": { "description": "手动投喂备注，供留痕使用", "type": ["string", "null"] }
       }
     },
     "TopicScoutJob": {

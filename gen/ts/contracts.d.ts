@@ -408,6 +408,14 @@ export interface ArticleEvaluateJob {
  */
 export interface SourceFetchJob {
   sourceId: string;
+  /**
+   * 手动投喂时只抓取这一条 URL；普通 source_fetch 不传
+   */
+  url?: string | null;
+  /**
+   * 手动投喂备注，供留痕使用
+   */
+  note?: string | null;
 }
 /**
  * queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4）

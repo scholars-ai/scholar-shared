@@ -7,6 +7,7 @@ from enum import StrEnum
 from uuid import UUID
 
 from pydantic import (
+    AnyUrl,
     AwareDatetime,
     BaseModel,
     ConfigDict,
@@ -435,6 +436,14 @@ class SourceFetchJob(BaseModel):
         extra='forbid',
     )
     sourceId: UUID
+    url: AnyUrl | None = None
+    """
+    手动投喂时只抓取这一条 URL；普通 source_fetch 不传
+    """
+    note: str | None = None
+    """
+    手动投喂备注，供留痕使用
+    """
 
 
 class TopicScoutJob(BaseModel):
