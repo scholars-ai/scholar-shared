@@ -404,11 +404,10 @@
       "description": "评分调度：**事件驱动**，candidate 产生即投递，不设固定时刻（SPEC-008 §3.1 纪律 2）",
       "type": "object",
       "additionalProperties": false,
-      "required": ["enabled", "maxConcurrency", "dailyTokenBudget"],
+      "required": ["enabled", "maxConcurrency"],
       "properties": {
         "enabled": { "type": "boolean" },
-        "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 32 },
-        "dailyTokenBudget": { "description": "每日 token 上限，超限停止消费并告警；null=不限", "type": ["integer", "null"], "minimum": 0 }
+        "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 32 }
       }
     },
     "SourceHealth": {

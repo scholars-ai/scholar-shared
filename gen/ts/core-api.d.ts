@@ -364,7 +364,6 @@ export interface components {
         TopicEvaluateSchedule: {
             enabled: boolean;
             maxConcurrency: number;
-            dailyTokenBudget: number | null;
         };
         SchedulerSettings: {
             sourceFetch: components["schemas"]["SourceFetchSchedule"];

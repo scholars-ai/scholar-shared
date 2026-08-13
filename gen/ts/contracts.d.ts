@@ -488,10 +488,6 @@ export interface TopicScoutSchedule {
 export interface TopicEvaluateSchedule {
   enabled: boolean;
   maxConcurrency: number;
-  /**
-   * 每日 token 上限，超限停止消费并告警；null=不限
-   */
-  dailyTokenBudget: number | null;
 }
 /**
  * 信源采集健康状态（client 信源管理页展示；连续失败需告警）

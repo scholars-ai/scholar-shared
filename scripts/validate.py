@@ -97,7 +97,7 @@ sched_defaults = {
         "timezone": "Asia/Shanghai",
         "minNewItems": 5,
     },
-    "topicEvaluate": {"enabled": True, "maxConcurrency": 2, "dailyTokenBudget": 200000},
+    "topicEvaluate": {"enabled": True, "maxConcurrency": 2},
 }
 errs = list(validator_for("SchedulerSettings").iter_errors(sched_defaults))
 check("default SchedulerSettings is valid", not errs, "; ".join(e.message for e in errs[:3]))

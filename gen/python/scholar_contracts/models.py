@@ -517,10 +517,6 @@ class TopicEvaluateSchedule(BaseModel):
     )
     enabled: bool
     maxConcurrency: conint(ge=1, le=32)
-    dailyTokenBudget: conint(ge=0) | None
-    """
-    每日 token 上限，超限停止消费并告警；null=不限
-    """
 
 
 class SourceHealth(BaseModel):

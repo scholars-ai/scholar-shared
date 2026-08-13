@@ -1943,9 +1943,6 @@ func (j *TopicEvaluateJob) UnmarshalJSON(value []byte) error {
 
 // 评分调度：**事件驱动**，candidate 产生即投递，不设固定时刻（SPEC-008 §3.1 纪律 2）
 type TopicEvaluateSchedule struct {
-	// 每日 token 上限，超限停止消费并告警；null=不限
-	DailyTokenBudget TopicEvaluateScheduleDailyTokenBudget `json:"dailyTokenBudget" yaml:"dailyTokenBudget" mapstructure:"dailyTokenBudget"`
-
 	// Enabled corresponds to the JSON schema field "enabled".
 	Enabled bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
 
@@ -1953,17 +1950,11 @@ type TopicEvaluateSchedule struct {
 	MaxConcurrency int `json:"maxConcurrency" yaml:"maxConcurrency" mapstructure:"maxConcurrency"`
 }
 
-// 每日 token 上限，超限停止消费并告警；null=不限
-type TopicEvaluateScheduleDailyTokenBudget *int
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TopicEvaluateSchedule) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
-	}
-	if _, ok := raw["dailyTokenBudget"]; raw != nil && !ok {
-		return fmt.Errorf("field dailyTokenBudget in TopicEvaluateSchedule: required")
 	}
 	if _, ok := raw["enabled"]; raw != nil && !ok {
 		return fmt.Errorf("field enabled in TopicEvaluateSchedule: required")
