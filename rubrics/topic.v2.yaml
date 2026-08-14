@@ -1,0 +1,42 @@
+# 选题评分 rubric（SPEC-004 §2）
+# v2 聚焦中文社区受众适配、选题具体性与候选间差异化；不启用 veto。
+id: topic
+version: v2
+passThreshold: 60 # >=75 推荐、60–75 备选、<60 自动 rejected（保留数据用于校准）
+dimensions:
+  - key: timeliness
+    name: 时效性
+    description: 是否处于热点窗口期？常青话题不扣分，但必须说明为什么现在值得讨论。
+    initialWeight: 0.20
+    anchors: []
+    vetoBelow: null
+  - key: audience_value
+    name: 受众价值
+    description: 对中文社区的 AI 学习者、从业者或泛科技读者是否有清晰的信息增量、现实影响或情绪价值；不能只因事件重大就高分。
+    initialWeight: 0.25
+    anchors: []
+    vetoBelow: null
+  - key: platform_fit
+    name: 平台适配
+    description: 选题是否适合建议平台的内容形态和中文读者语境；英文标题、海外专有名词或技术术语陌生时，必须考虑是否需要本地化解释，而不是直接高分。
+    initialWeight: 0.15
+    anchors: []
+    vetoBelow: null
+  - key: differentiation
+    name: 差异化空间
+    description: 相比已有候选和常见报道，是否有具体且可展开的独特切口；主题高度相似、仅替换措辞或重复同一事件时应明显扣分。
+    initialWeight: 0.15
+    anchors: []
+    vetoBelow: null
+  - key: material_richness
+    name: 素材支撑
+    description: 现有素材是否足以写出事实扎实、具体可读的文章，而不是只有一句新闻或宽泛判断。
+    initialWeight: 0.10
+    anchors: []
+    vetoBelow: null
+  - key: history_signal
+    name: 历史信号
+    description: 与历史高表现选题的相似度。冷启动阶段该维度权重降为 0 并按比例归一（SPEC-004 §2）。
+    initialWeight: 0.15
+    anchors: []
+    vetoBelow: null

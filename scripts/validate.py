@@ -66,7 +66,7 @@ for q, def_name in queues.items():
 
 # 5. Judge 结构化输出的维度必须与 rubric 完全一致。
 #    rubric 是唯一事实来源；若两处漂移，评分会静默丢维度或报错，且历史分数不可比。
-JUDGE_OUTPUT_TO_RUBRIC = {"TopicJudgeOutput": "rubrics/topic.v1.yaml"}
+JUDGE_OUTPUT_TO_RUBRIC = {"TopicJudgeOutput": "rubrics/topic.v2.yaml"}
 for out_def, rubric_path in JUDGE_OUTPUT_TO_RUBRIC.items():
     rubric = yaml.safe_load((ROOT / rubric_path).read_text())
     rubric_keys = {d["key"] for d in rubric["dimensions"]}
