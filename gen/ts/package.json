@@ -17,10 +17,6 @@
       "types": "./core-api.d.ts"
     }
   },
-  "publishConfig": {
-    "access": "restricted",
-    "registry": "https://npm.pkg.github.com"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/scholars-ai/scholar-shared.git",

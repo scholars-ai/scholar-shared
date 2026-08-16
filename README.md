@@ -27,7 +27,16 @@ scripts/validate.py            契约自检（schema 合法/权重归一/队列�
 
 - **Go（core）**：`require github.com/scholars-ai/scholar-shared/gen/go`
 - **Python（agents）**：以 git 子路径依赖引入 `gen/python/scholar_contracts`
-- **TS（client）**：当前同步 `gen/ts/*.d.ts` 并由跨仓库 CI 校验；`gen/ts/package.json` 定义 `@scholars-ai/contracts` 版本化类型包，发布流程确认后改为包依赖
+- **TS（client）**：`@scholars-ai/contracts` 随 `contracts-vX.Y.Z` tag 打包为公开 GitHub Release asset；client 依赖固定版本的 tarball，无需 GitHub Packages token
+
+## 发布 TypeScript 契约
+
+1. 修改契约并重新生成代码
+2. 更新 `gen/ts/package.json` 的 `version`
+3. 合并并推送 `main`
+4. 创建并推送与版本一致的 tag，例如 `contracts-v0.2.0`
+
+`release-ts-contracts.yml` 会校验 tag 与 package version 一致，执行 `npm pack`，并把 tarball 发布到同名的公开 GitHub Release。Client 应固定依赖该 Release URL；新版本发布后再显式升级，避免 `main` 的变化无意间破坏构建。
 
 ## 约定
 

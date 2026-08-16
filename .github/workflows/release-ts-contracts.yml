@@ -1,0 +1,32 @@
+name: Release TypeScript contracts
+
+on:
+  push:
+    tags:
+      - contracts-v*
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          expected="contracts-v$(node -p "require('./gen/ts/package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "tag $GITHUB_REF_NAME does not match package version $expected" >&2
+            exit 1
+          fi
+      - name: Pack contracts
+        run: mkdir -p dist && npm pack ./gen/ts --pack-destination dist
+      - name: Publish public GitHub Release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.tgz --title "$GITHUB_REF_NAME" --generate-notes
