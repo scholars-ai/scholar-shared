@@ -1,6 +1,6 @@
 {
   "name": "@scholars-ai/contracts",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Generated TypeScript contracts for Scholars AI",
   "license": "MIT",
   "type": "module",

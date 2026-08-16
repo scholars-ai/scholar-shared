@@ -102,6 +102,22 @@ export type TopicEvaluation = EvaluationCore & {
  */
 export type ArticleEvaluation = EvaluationCore & {
   articleId: string;
+  /**
+   * 评分时生效的 weight_sets.version
+   */
+  weightVersion?: number | null;
+  /**
+   * 触发一票否决的维度；没有 veto 时为空
+   */
+  vetoedDimension?: string | null;
+  /**
+   * 本次 rubric 的过审线
+   */
+  passThreshold: number;
+  /**
+   * 确定性代码按总分和 veto 计算的最终判定
+   */
+  passed: boolean;
   [k: string]: unknown;
 };
 
@@ -213,6 +229,12 @@ export interface EvaluationCore {
   dimensionScores: {
     [k: string]: number;
   };
+  /**
+   * 维度 key → 具体评分理由
+   */
+  dimensionReasons: {
+    [k: string]: string;
+  };
   totalScore: number;
   /**
    * 人可读的评审理由
@@ -244,6 +266,10 @@ export interface Article {
    * 同一 topic+platform 的重写版本号，从 1 起
    */
   version: number;
+  /**
+   * 回炉前一版本；首版为空。文章版本不可变，新版本另建一行。
+   */
+  previousArticleId?: string | null;
   format: ArticleFormat;
   title: string;
   contentMd: string;

@@ -162,6 +162,9 @@ type Article struct {
 	// Platform corresponds to the JSON schema field "platform".
 	Platform Platform `json:"platform" yaml:"platform" mapstructure:"platform"`
 
+	// 回炉前一版本；首版为空。文章版本不可变，新版本另建一行。
+	PreviousArticleId ArticlePreviousArticleId `json:"previousArticleId,omitempty,omitzero" yaml:"previousArticleId,omitempty" mapstructure:"previousArticleId,omitempty"`
+
 	// Status corresponds to the JSON schema field "status".
 	Status ArticleStatus `json:"status" yaml:"status" mapstructure:"status"`
 
@@ -302,6 +305,9 @@ func (j *ArticleFormat) UnmarshalJSON(value []byte) error {
 }
 
 type ArticleLatestScore *float64
+
+// 回炉前一版本；首版为空。文章版本不可变，新版本另建一行。
+type ArticlePreviousArticleId *string
 
 type ArticleStatus string
 
@@ -546,6 +552,9 @@ type EvaluationCore struct {
 	// AgentRunId corresponds to the JSON schema field "agentRunId".
 	AgentRunId EvaluationCoreAgentRunId `json:"agentRunId" yaml:"agentRunId" mapstructure:"agentRunId"`
 
+	// 维度 key → 具体评分理由
+	DimensionReasons EvaluationCoreDimensionReasons `json:"dimensionReasons" yaml:"dimensionReasons" mapstructure:"dimensionReasons"`
+
 	// DimensionScores corresponds to the JSON schema field "dimensionScores".
 	DimensionScores EvaluationCoreDimensionScores `json:"dimensionScores" yaml:"dimensionScores" mapstructure:"dimensionScores"`
 
@@ -567,6 +576,9 @@ type EvaluationCore struct {
 
 type EvaluationCoreAgentRunId *string
 
+// 维度 key → 具体评分理由
+type EvaluationCoreDimensionReasons map[string]string
+
 type EvaluationCoreDimensionScores map[string]float64
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -577,6 +589,9 @@ func (j *EvaluationCore) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["agentRunId"]; raw != nil && !ok {
 		return fmt.Errorf("field agentRunId in EvaluationCore: required")
+	}
+	if _, ok := raw["dimensionReasons"]; raw != nil && !ok {
+		return fmt.Errorf("field dimensionReasons in EvaluationCore: required")
 	}
 	if _, ok := raw["dimensionScores"]; raw != nil && !ok {
 		return fmt.Errorf("field dimensionScores in EvaluationCore: required")

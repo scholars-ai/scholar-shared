@@ -201,6 +201,10 @@ class EvaluationCore(BaseModel):
     如 topic@v1 / article/xiaohongshu@v3
     """
     dimensionScores: dict[str, confloat(ge=0.0, le=10.0)]
+    dimensionReasons: dict[str, constr(min_length=1)]
+    """
+    维度 key → 具体评分理由
+    """
     totalScore: confloat(ge=0.0, le=100.0)
     rationale: constr(min_length=1)
     """
@@ -224,6 +228,22 @@ class TopicEvaluation(EvaluationCore):
 
 class ArticleEvaluation(EvaluationCore):
     articleId: UUID
+    weightVersion: conint(ge=1) | None = None
+    """
+    评分时生效的 weight_sets.version
+    """
+    vetoedDimension: str | None = None
+    """
+    触发一票否决的维度；没有 veto 时为空
+    """
+    passThreshold: confloat(ge=0.0, le=100.0)
+    """
+    本次 rubric 的过审线
+    """
+    passed: bool
+    """
+    确定性代码按总分和 veto 计算的最终判定
+    """
 
 
 class Role(StrEnum):
@@ -254,6 +274,10 @@ class Article(BaseModel):
     version: conint(ge=1)
     """
     同一 topic+platform 的重写版本号，从 1 起
+    """
+    previousArticleId: UUID | None = None
+    """
+    回炉前一版本；首版为空。文章版本不可变，新版本另建一行。
     """
     format: ArticleFormat
     title: constr(min_length=1)

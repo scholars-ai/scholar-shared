@@ -131,11 +131,12 @@
       "description": "评分记录公共结构（SPEC-004 §1）。dimensionScores: 维度 key → 0–10 分",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "rubricVersion", "dimensionScores", "totalScore", "rationale", "judgeModel", "agentRunId"],
+      "required": ["id", "rubricVersion", "dimensionScores", "dimensionReasons", "totalScore", "rationale", "judgeModel", "agentRunId"],
       "properties": {
         "id": { "type": "string", "format": "uuid" },
         "rubricVersion": { "description": "如 topic@v1 / article/xiaohongshu@v3", "type": "string", "minLength": 1 },
         "dimensionScores": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0, "maximum": 10 } },
+        "dimensionReasons": { "description": "维度 key → 具体评分理由", "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
         "totalScore": { "type": "number", "minimum": 0, "maximum": 100 },
         "rationale": { "description": "人可读的评审理由", "type": "string", "minLength": 1 },
         "judgeModel": { "type": "string" },
@@ -161,8 +162,14 @@
         { "$ref": "#/definitions/EvaluationCore" },
         {
           "type": "object",
-          "required": ["articleId"],
-          "properties": { "articleId": { "type": "string", "format": "uuid" } }
+          "required": ["articleId", "passThreshold", "passed"],
+          "properties": {
+            "articleId": { "type": "string", "format": "uuid" },
+            "weightVersion": { "description": "评分时生效的 weight_sets.version", "type": ["integer", "null"], "minimum": 1 },
+            "vetoedDimension": { "description": "触发一票否决的维度；没有 veto 时为空", "type": ["string", "null"] },
+            "passThreshold": { "description": "本次 rubric 的过审线", "type": "number", "minimum": 0, "maximum": 100 },
+            "passed": { "description": "确定性代码按总分和 veto 计算的最终判定", "type": "boolean" }
+          }
         }
       ]
     },
@@ -186,6 +193,7 @@
         "topicId": { "type": "string", "format": "uuid" },
         "platform": { "$ref": "#/definitions/Platform" },
         "version": { "description": "同一 topic+platform 的重写版本号，从 1 起", "type": "integer", "minimum": 1 },
+        "previousArticleId": { "description": "回炉前一版本；首版为空。文章版本不可变，新版本另建一行。", "type": ["string", "null"], "format": "uuid" },
         "format": { "$ref": "#/definitions/ArticleFormat" },
         "title": { "type": "string", "minLength": 1 },
         "contentMd": { "type": "string", "minLength": 1 },
