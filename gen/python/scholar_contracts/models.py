@@ -616,6 +616,49 @@ class TopicDraft(BaseModel):
     targetPlatforms: list[Platform] = Field(..., min_length=1)
 
 
+class PlatformHardConstraints(BaseModel):
+    """
+    平台可由确定性 Formatter 检查的硬约束（SPEC-005 §3）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    minCharacters: conint(ge=1)
+    maxCharacters: conint(ge=1)
+    titleMaxCharacters: conint(ge=1)
+    minTags: conint(ge=0)
+    maxTags: conint(ge=0)
+    minImagePlaceholders: conint(ge=0)
+
+
+class StructureTemplateItem(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class StyleRule(RootModel[constr(min_length=1)]):
+    root: constr(min_length=1)
+
+
+class PlatformProfile(BaseModel):
+    """
+    平台专家的声明式档案；新增平台只新增 profile + rubric（SPEC-005 §3）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: constr(pattern=r'^platform/[a-z0-9_-]+$')
+    version: constr(pattern=r'^v[0-9]+$')
+    platform: Platform
+    voice: constr(min_length=1)
+    structureTemplate: list[StructureTemplateItem] = Field(..., min_length=1)
+    hardConstraints: PlatformHardConstraints
+    styleRules: list[StyleRule] = Field(..., min_length=1)
+    rubricRef: constr(pattern=r'^article/[a-z0-9_-]+@v[0-9]+$')
+    exemplars: list[constr(min_length=1)]
+
+
 class RubricAnchor(BaseModel):
     """
     锚定样例：抑制 LLM 评分中心化（SPEC-004 §1.3）

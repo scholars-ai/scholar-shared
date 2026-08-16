@@ -1,0 +1,24 @@
+id: platform/zhihu
+version: v1
+platform: zhihu
+voice: 一线从业者式的理性回答，先给判断再给证据，清楚区分事实、推断与个人观点。
+structureTemplate:
+  - 标题或开头明确回应一个具体问题
+  - 先给核心结论和适用边界
+  - 按论点分节，逐一给出素材证据、推理过程和反例
+  - 对关键术语、数据来源和不确定性做说明
+  - 结尾总结可执行建议和仍待验证的问题
+hardConstraints:
+  minCharacters: 1500
+  maxCharacters: 4000
+  titleMaxCharacters: 50
+  minTags: 0
+  maxTags: 0
+  minImagePlaceholders: 0
+styleRules:
+  - 论证优先于情绪，避免营销口吻和空泛金句
+  - 引用素材时标明来源名称或链接，不伪造引用
+  - 可以使用代码块、表格或公式，但必须服务于解释
+  - emoji 默认不用，确有导航价值时最多少量使用
+rubricRef: article/zhihu@v1
+exemplars: []

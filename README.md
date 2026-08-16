@@ -9,6 +9,7 @@ schemas/scholars.schema.json   实体/枚举/job payload/rubric 结构（draft-0
 schemas/queues.json            队列注册表：queue 名 → payload definition
 openapi/core.yaml              scholar-core 的 REST API 契约
 rubrics/*.yaml                 评分 rubric 数据（版本化，SPEC-004）
+profiles/*.yaml                平台专家档案：语气、结构、硬约束和 rubric 引用（SPEC-005）
 gen/go/                        生成物 → scholar-core 以 go module 引用
 gen/python/                    生成物（Pydantic v2）→ scholar-agents 引用
 gen/ts/                        生成物 → scholar-client 引用
@@ -18,7 +19,7 @@ scripts/validate.py            契约自检（schema 合法/权重归一/队列�
 
 ## 修改契约的流程
 
-1. 改 `schemas/` / `openapi/` / `rubrics/`（重大变更先改 [spec](https://github.com/scholars-ai/spec)）
+1. 改 `schemas/` / `openapi/` / `rubrics/` / `profiles/`（重大变更先改 [spec](https://github.com/scholars-ai/spec)）
 2. `./scripts/generate.sh` 重新生成三端代码
 3. `uv run --no-project --with jsonschema --with pyyaml scripts/validate.py` 自检
 4. 生成物一并提交。CI 会重跑 codegen 并校验 `gen/` 无 diff（防手改漂移）

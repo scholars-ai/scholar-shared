@@ -1,0 +1,11 @@
+id: article/zhihu
+version: v1
+passThreshold: 70
+dimensions:
+  - {key: accuracy, name: 事实准确, description: 与素材事实一致，技术表述正确，明确不确定性。, initialWeight: 0.25, anchors: [], vetoBelow: 6}
+  - {key: structure, name: 结构, description: 结论、论点、证据、反例和总结形成清晰论证链。, initialWeight: 0.15, anchors: [], vetoBelow: null}
+  - {key: readability, name: 可读性, description: 专业内容解释清楚，段落和术语密度适中。, initialWeight: 0.15, anchors: [], vetoBelow: null}
+  - {key: format_compliance, name: 格式合规, description: 字数、Markdown 和平台档案硬约束全部满足。, initialWeight: 0.10, anchors: [], vetoBelow: null}
+  - {key: argument_depth, name: 论证深度, description: 不止复述新闻，能解释机制、边界、影响和反例。, initialWeight: 0.15, anchors: [], vetoBelow: null}
+  - {key: credibility, name: 专业可信度, description: 引用和数据有来源，事实、推断与观点边界清楚。, initialWeight: 0.12, anchors: [], vetoBelow: null}
+  - {key: problem_focus, name: 问题聚焦, description: 开头直接回应具体问题，全文不偏离核心判断。, initialWeight: 0.08, anchors: [], vetoBelow: null}

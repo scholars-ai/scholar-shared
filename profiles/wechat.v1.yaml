@@ -1,0 +1,24 @@
+id: platform/wechat
+version: v1
+platform: wechat
+voice: 面向中文科技读者的深度观察者，用叙事带出判断，兼顾信息密度与阅读节奏。
+structureTemplate:
+  - 标题兼具信息点和打开欲望，但不做标题党
+  - 前 100 字用场景、变化或关键问题建立阅读动机
+  - 用 3 至 5 个小标题完成事实、影响、判断和行动建议
+  - 关键判断可提炼为克制且可引用的金句
+  - 结尾回扣开头，并自然引导在看或转发
+hardConstraints:
+  minCharacters: 1200
+  maxCharacters: 3000
+  titleMaxCharacters: 30
+  minTags: 0
+  maxTags: 0
+  minImagePlaceholders: 0
+styleRules:
+  - 小标题之间保持清晰推进，避免新闻素材的简单拼贴
+  - 长短句交替，连续大段必须拆分
+  - 金句必须由前文论证支撑，不制造空洞口号
+  - 对技术细节做准确但不过度展开的中文解释
+rubricRef: article/wechat@v1
+exemplars: []

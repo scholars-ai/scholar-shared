@@ -1,0 +1,12 @@
+id: article/xiaohongshu
+version: v1
+passThreshold: 70
+dimensions:
+  - {key: accuracy, name: 事实准确, description: 与素材事实一致，无编造的数字、经历或结论。, initialWeight: 0.25, anchors: [], vetoBelow: 6}
+  - {key: structure, name: 结构, description: 钩子、主体清单和结尾引导形成清晰推进。, initialWeight: 0.15, anchors: [], vetoBelow: null}
+  - {key: readability, name: 可读性, description: 短段落、术语解释和行文节奏适合移动端阅读。, initialWeight: 0.15, anchors: [], vetoBelow: null}
+  - {key: format_compliance, name: 格式合规, description: 字数、标题、标签和 Markdown 满足平台档案硬约束。, initialWeight: 0.10, anchors: [], vetoBelow: null}
+  - {key: title_appeal, name: 标题吸引力, description: 20 字内表达明确利益点或反差，不做虚假夸张。, initialWeight: 0.12, anchors: [], vetoBelow: null}
+  - {key: conversational_voice, name: 口语与信任感, description: 像可信朋友分享，亲切但不伪造体验。, initialWeight: 0.10, anchors: [], vetoBelow: null}
+  - {key: scanability, name: 扫读体验, description: 小标题、清单、分段和 emoji 共同帮助快速获取信息。, initialWeight: 0.08, anchors: [], vetoBelow: null}
+  - {key: utility, name: 实用价值, description: 给出可执行步骤、判断标准或可收藏的总结。, initialWeight: 0.05, anchors: [], vetoBelow: null}

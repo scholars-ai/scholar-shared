@@ -622,6 +622,43 @@ export interface TopicDraft {
   targetPlatforms: [Platform, ...Platform[]];
 }
 /**
+ * 平台可由确定性 Formatter 检查的硬约束（SPEC-005 §3）
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "PlatformHardConstraints".
+ */
+export interface PlatformHardConstraints {
+  minCharacters: number;
+  maxCharacters: number;
+  titleMaxCharacters: number;
+  minTags: number;
+  maxTags: number;
+  minImagePlaceholders: number;
+}
+/**
+ * 平台专家的声明式档案；新增平台只新增 profile + rubric（SPEC-005 §3）
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "PlatformProfile".
+ */
+export interface PlatformProfile {
+  id: string;
+  version: string;
+  platform: Platform;
+  voice: string;
+  /**
+   * @minItems 1
+   */
+  structureTemplate: [string, ...string[]];
+  hardConstraints: PlatformHardConstraints;
+  /**
+   * @minItems 1
+   */
+  styleRules: [string, ...string[]];
+  rubricRef: string;
+  exemplars: string[];
+}
+/**
  * 锚定样例：抑制 LLM 评分中心化（SPEC-004 §1.3）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema

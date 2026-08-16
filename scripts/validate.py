@@ -59,12 +59,43 @@ check("performance-weights covers all platforms",
       set(platforms) == set(DEFS["Platform"]["enum"]),
       f"got {platforms}")
 
-# 4. 队列注册表指向存在的 definition
+# 4. Platform Profile 必须覆盖全部平台，且约束自洽并引用存在的同平台 rubric。
+profiles = []
+for f in sorted((ROOT / "profiles").glob("*.yaml")):
+    data = yaml.safe_load(f.read_text())
+    profiles.append(data)
+    errs = list(validator_for("PlatformProfile").iter_errors(data))
+    check(f"{f.name} matches PlatformProfile", not errs,
+          "; ".join(e.message for e in errs[:3]))
+    constraints = data["hardConstraints"]
+    check(f"{f.name} character range valid",
+          constraints["minCharacters"] <= constraints["maxCharacters"])
+    check(f"{f.name} tag range valid",
+          constraints["minTags"] <= constraints["maxTags"])
+    rubric_id, _, rubric_version = data["rubricRef"].partition("@")
+    rubric_file = ROOT / "rubrics" / f"{rubric_id.replace('/', '-')}.{rubric_version}.yaml"
+    check(f"{f.name} rubric exists", rubric_file.exists(), str(rubric_file))
+    if rubric_file.exists():
+        rubric = yaml.safe_load(rubric_file.read_text())
+        check(f"{f.name} rubric ref matches file",
+              rubric.get("id") == rubric_id and rubric.get("version") == rubric_version)
+    check(f"{f.name} ids match platform",
+          data["id"] == f"platform/{data['platform']}"
+          and rubric_id == f"article/{data['platform']}")
+
+profile_platforms = [profile["platform"] for profile in profiles]
+check("platform profiles cover all platforms exactly once",
+      sorted(profile_platforms) == sorted(DEFS["Platform"]["enum"]),
+      f"got {profile_platforms}")
+check("platform profile ids unique",
+      len({profile["id"] for profile in profiles}) == len(profiles))
+
+# 5. 队列注册表指向存在的 definition
 queues = json.loads((ROOT / "schemas/queues.json").read_text())["queues"]
 for q, def_name in queues.items():
     check(f"queue {q} -> {def_name} exists", def_name in DEFS)
 
-# 5. Judge 结构化输出的维度必须与 rubric 完全一致。
+# 6. Judge 结构化输出的维度必须与 rubric 完全一致。
 #    rubric 是唯一事实来源；若两处漂移，评分会静默丢维度或报错，且历史分数不可比。
 JUDGE_OUTPUT_TO_RUBRIC = {"TopicJudgeOutput": "rubrics/topic.v2.yaml"}
 for out_def, rubric_path in JUDGE_OUTPUT_TO_RUBRIC.items():
@@ -88,7 +119,7 @@ for out_def, rubric_path in JUDGE_OUTPUT_TO_RUBRIC.items():
         "additionalProperties 必须为 false，否则模型可臆造维度",
     )
 
-# 6. 调度设置：默认值必须自身合法（core 首次 seed 会用它）
+# 7. 调度设置：默认值必须自身合法（core 首次 seed 会用它）
 sched_defaults = {
     "sourceFetch": {"enabled": True, "defaultIntervalMinutes": 60},
     "topicScout": {

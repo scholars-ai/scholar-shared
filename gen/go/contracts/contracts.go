@@ -1113,6 +1113,169 @@ func (j *PerformanceWeights) UnmarshalJSON(value []byte) error {
 
 type Platform string
 
+// 平台可由确定性 Formatter 检查的硬约束（SPEC-005 §3）
+type PlatformHardConstraints struct {
+	// MaxCharacters corresponds to the JSON schema field "maxCharacters".
+	MaxCharacters int `json:"maxCharacters" yaml:"maxCharacters" mapstructure:"maxCharacters"`
+
+	// MaxTags corresponds to the JSON schema field "maxTags".
+	MaxTags int `json:"maxTags" yaml:"maxTags" mapstructure:"maxTags"`
+
+	// MinCharacters corresponds to the JSON schema field "minCharacters".
+	MinCharacters int `json:"minCharacters" yaml:"minCharacters" mapstructure:"minCharacters"`
+
+	// MinImagePlaceholders corresponds to the JSON schema field
+	// "minImagePlaceholders".
+	MinImagePlaceholders int `json:"minImagePlaceholders" yaml:"minImagePlaceholders" mapstructure:"minImagePlaceholders"`
+
+	// MinTags corresponds to the JSON schema field "minTags".
+	MinTags int `json:"minTags" yaml:"minTags" mapstructure:"minTags"`
+
+	// TitleMaxCharacters corresponds to the JSON schema field "titleMaxCharacters".
+	TitleMaxCharacters int `json:"titleMaxCharacters" yaml:"titleMaxCharacters" mapstructure:"titleMaxCharacters"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *PlatformHardConstraints) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["maxCharacters"]; raw != nil && !ok {
+		return fmt.Errorf("field maxCharacters in PlatformHardConstraints: required")
+	}
+	if _, ok := raw["maxTags"]; raw != nil && !ok {
+		return fmt.Errorf("field maxTags in PlatformHardConstraints: required")
+	}
+	if _, ok := raw["minCharacters"]; raw != nil && !ok {
+		return fmt.Errorf("field minCharacters in PlatformHardConstraints: required")
+	}
+	if _, ok := raw["minImagePlaceholders"]; raw != nil && !ok {
+		return fmt.Errorf("field minImagePlaceholders in PlatformHardConstraints: required")
+	}
+	if _, ok := raw["minTags"]; raw != nil && !ok {
+		return fmt.Errorf("field minTags in PlatformHardConstraints: required")
+	}
+	if _, ok := raw["titleMaxCharacters"]; raw != nil && !ok {
+		return fmt.Errorf("field titleMaxCharacters in PlatformHardConstraints: required")
+	}
+	type Plain PlatformHardConstraints
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 1 > plain.MaxCharacters {
+		return fmt.Errorf("field %s: must be >= %v", "maxCharacters", 1)
+	}
+	if 0 > plain.MaxTags {
+		return fmt.Errorf("field %s: must be >= %v", "maxTags", 0)
+	}
+	if 1 > plain.MinCharacters {
+		return fmt.Errorf("field %s: must be >= %v", "minCharacters", 1)
+	}
+	if 0 > plain.MinImagePlaceholders {
+		return fmt.Errorf("field %s: must be >= %v", "minImagePlaceholders", 0)
+	}
+	if 0 > plain.MinTags {
+		return fmt.Errorf("field %s: must be >= %v", "minTags", 0)
+	}
+	if 1 > plain.TitleMaxCharacters {
+		return fmt.Errorf("field %s: must be >= %v", "titleMaxCharacters", 1)
+	}
+	*j = PlatformHardConstraints(plain)
+	return nil
+}
+
+// 平台专家的声明式档案；新增平台只新增 profile + rubric（SPEC-005 §3）
+type PlatformProfile struct {
+	// Exemplars corresponds to the JSON schema field "exemplars".
+	Exemplars []string `json:"exemplars" yaml:"exemplars" mapstructure:"exemplars"`
+
+	// HardConstraints corresponds to the JSON schema field "hardConstraints".
+	HardConstraints PlatformHardConstraints `json:"hardConstraints" yaml:"hardConstraints" mapstructure:"hardConstraints"`
+
+	// Id corresponds to the JSON schema field "id".
+	Id string `json:"id" yaml:"id" mapstructure:"id"`
+
+	// Platform corresponds to the JSON schema field "platform".
+	Platform Platform `json:"platform" yaml:"platform" mapstructure:"platform"`
+
+	// RubricRef corresponds to the JSON schema field "rubricRef".
+	RubricRef string `json:"rubricRef" yaml:"rubricRef" mapstructure:"rubricRef"`
+
+	// StructureTemplate corresponds to the JSON schema field "structureTemplate".
+	StructureTemplate []string `json:"structureTemplate" yaml:"structureTemplate" mapstructure:"structureTemplate"`
+
+	// StyleRules corresponds to the JSON schema field "styleRules".
+	StyleRules []string `json:"styleRules" yaml:"styleRules" mapstructure:"styleRules"`
+
+	// Version corresponds to the JSON schema field "version".
+	Version string `json:"version" yaml:"version" mapstructure:"version"`
+
+	// Voice corresponds to the JSON schema field "voice".
+	Voice string `json:"voice" yaml:"voice" mapstructure:"voice"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *PlatformProfile) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["exemplars"]; raw != nil && !ok {
+		return fmt.Errorf("field exemplars in PlatformProfile: required")
+	}
+	if _, ok := raw["hardConstraints"]; raw != nil && !ok {
+		return fmt.Errorf("field hardConstraints in PlatformProfile: required")
+	}
+	if _, ok := raw["id"]; raw != nil && !ok {
+		return fmt.Errorf("field id in PlatformProfile: required")
+	}
+	if _, ok := raw["platform"]; raw != nil && !ok {
+		return fmt.Errorf("field platform in PlatformProfile: required")
+	}
+	if _, ok := raw["rubricRef"]; raw != nil && !ok {
+		return fmt.Errorf("field rubricRef in PlatformProfile: required")
+	}
+	if _, ok := raw["structureTemplate"]; raw != nil && !ok {
+		return fmt.Errorf("field structureTemplate in PlatformProfile: required")
+	}
+	if _, ok := raw["styleRules"]; raw != nil && !ok {
+		return fmt.Errorf("field styleRules in PlatformProfile: required")
+	}
+	if _, ok := raw["version"]; raw != nil && !ok {
+		return fmt.Errorf("field version in PlatformProfile: required")
+	}
+	if _, ok := raw["voice"]; raw != nil && !ok {
+		return fmt.Errorf("field voice in PlatformProfile: required")
+	}
+	type Plain PlatformProfile
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^platform/[a-z0-9_-]+$`, string(plain.Id)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "Id", `^platform/[a-z0-9_-]+$`)
+	}
+	if matched, _ := regexp.MatchString(`^article/[a-z0-9_-]+@v[0-9]+$`, string(plain.RubricRef)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "RubricRef", `^article/[a-z0-9_-]+@v[0-9]+$`)
+	}
+	if plain.StructureTemplate != nil && len(plain.StructureTemplate) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "structureTemplate", 1)
+	}
+	if plain.StyleRules != nil && len(plain.StyleRules) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "styleRules", 1)
+	}
+	if matched, _ := regexp.MatchString(`^v[0-9]+$`, string(plain.Version)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "Version", `^v[0-9]+$`)
+	}
+	if utf8.RuneCountInString(string(plain.Voice)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "voice", 1)
+	}
+	*j = PlatformProfile(plain)
+	return nil
+}
+
 const PlatformWechat Platform = "wechat"
 const PlatformXiaohongshu Platform = "xiaohongshu"
 const PlatformZhihu Platform = "zhihu"

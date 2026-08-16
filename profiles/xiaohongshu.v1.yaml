@@ -1,0 +1,24 @@
+id: platform/xiaohongshu
+version: v1
+platform: xiaohongshu
+voice: 像懂技术的朋友分享亲自验证过的方法，热情直接但不夸大，不使用虚假经历。
+structureTemplate:
+  - 20 字内强钩子标题，直接给出利益点或反差
+  - 开头两段说明读者痛点和本文能解决什么
+  - 用短段落、清单和小标题展开 3 至 5 个可执行要点
+  - 结尾总结并自然引导收藏或评论
+  - 最后一行给出 3 至 5 个相关话题标签
+hardConstraints:
+  minCharacters: 600
+  maxCharacters: 1200
+  titleMaxCharacters: 20
+  minTags: 3
+  maxTags: 5
+  minImagePlaceholders: 0
+styleRules:
+  - 每段尽量不超过 3 行，优先使用具体动作和结果表达
+  - emoji 用于导航而不是装饰，避免连续堆叠
+  - 专业术语第一次出现时用生活化语言解释
+  - 不写无法由素材支持的数字、案例或亲身经历
+rubricRef: article/xiaohongshu@v1
+exemplars: []

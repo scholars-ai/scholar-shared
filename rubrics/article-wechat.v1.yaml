@@ -1,0 +1,12 @@
+id: article/wechat
+version: v1
+passThreshold: 70
+dimensions:
+  - {key: accuracy, name: 事实准确, description: 与素材事实一致，无编造的事件、数字或因果关系。, initialWeight: 0.25, anchors: [], vetoBelow: 6}
+  - {key: structure, name: 结构, description: 开头、事实、影响、判断与结尾形成完整推进。, initialWeight: 0.15, anchors: [], vetoBelow: null}
+  - {key: readability, name: 可读性, description: 长短句、段落和小标题形成适合公众号的阅读节奏。, initialWeight: 0.15, anchors: [], vetoBelow: null}
+  - {key: format_compliance, name: 格式合规, description: 字数、标题、Markdown 和平台档案硬约束全部满足。, initialWeight: 0.10, anchors: [], vetoBelow: null}
+  - {key: title_potential, name: 标题打开率潜力, description: 标题有信息点和阅读动机，但不夸大或制造焦虑。, initialWeight: 0.12, anchors: [], vetoBelow: null}
+  - {key: narrative, name: 叙事完整性, description: 用场景和变化组织素材，而不是信息片段的简单堆叠。, initialWeight: 0.13, anchors: [], vetoBelow: null}
+  - {key: quotability, name: 金句质量, description: 关键判断简洁可记忆且由前文论证支撑。, initialWeight: 0.05, anchors: [], vetoBelow: null}
+  - {key: pacing, name: 排版节奏, description: 小标题、引用块和段落长度帮助持续阅读。, initialWeight: 0.05, anchors: [], vetoBelow: null}
