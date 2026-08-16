@@ -129,6 +129,13 @@ sched_defaults = {
         "minNewItems": 5,
     },
     "topicEvaluate": {"enabled": True, "maxConcurrency": 2},
+    "memoryReflect": {
+        "enabled": True,
+        "weekday": 1,
+        "time": "09:00",
+        "timezone": "Asia/Shanghai",
+        "lookbackDays": 7,
+    },
 }
 errs = list(validator_for("SchedulerSettings").iter_errors(sched_defaults))
 check("default SchedulerSettings is valid", not errs, "; ".join(e.message for e in errs[:3]))

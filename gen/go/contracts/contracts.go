@@ -1005,6 +1005,105 @@ func (j *MemoryReflectJob) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// memory.reflect 的 LLM 输出；统计与相关性不由模型计算
+type MemoryReflectOutput struct {
+	// Insights corresponds to the JSON schema field "insights".
+	Insights []ReflectorInsightDraft `json:"insights" yaml:"insights" mapstructure:"insights"`
+
+	// SummaryMarkdown corresponds to the JSON schema field "summaryMarkdown".
+	SummaryMarkdown string `json:"summaryMarkdown" yaml:"summaryMarkdown" mapstructure:"summaryMarkdown"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *MemoryReflectOutput) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["insights"]; raw != nil && !ok {
+		return fmt.Errorf("field insights in MemoryReflectOutput: required")
+	}
+	if _, ok := raw["summaryMarkdown"]; raw != nil && !ok {
+		return fmt.Errorf("field summaryMarkdown in MemoryReflectOutput: required")
+	}
+	type Plain MemoryReflectOutput
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain.SummaryMarkdown)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "summaryMarkdown", 1)
+	}
+	*j = MemoryReflectOutput(plain)
+	return nil
+}
+
+// 每周反思调度；weekday 使用 ISO 周序号 1=周一…7=周日
+type MemoryReflectSchedule struct {
+	// Enabled corresponds to the JSON schema field "enabled".
+	Enabled bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+
+	// LookbackDays corresponds to the JSON schema field "lookbackDays".
+	LookbackDays int `json:"lookbackDays" yaml:"lookbackDays" mapstructure:"lookbackDays"`
+
+	// Time corresponds to the JSON schema field "time".
+	Time string `json:"time" yaml:"time" mapstructure:"time"`
+
+	// Timezone corresponds to the JSON schema field "timezone".
+	Timezone string `json:"timezone" yaml:"timezone" mapstructure:"timezone"`
+
+	// Weekday corresponds to the JSON schema field "weekday".
+	Weekday int `json:"weekday" yaml:"weekday" mapstructure:"weekday"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *MemoryReflectSchedule) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["enabled"]; raw != nil && !ok {
+		return fmt.Errorf("field enabled in MemoryReflectSchedule: required")
+	}
+	if _, ok := raw["lookbackDays"]; raw != nil && !ok {
+		return fmt.Errorf("field lookbackDays in MemoryReflectSchedule: required")
+	}
+	if _, ok := raw["time"]; raw != nil && !ok {
+		return fmt.Errorf("field time in MemoryReflectSchedule: required")
+	}
+	if _, ok := raw["timezone"]; raw != nil && !ok {
+		return fmt.Errorf("field timezone in MemoryReflectSchedule: required")
+	}
+	if _, ok := raw["weekday"]; raw != nil && !ok {
+		return fmt.Errorf("field weekday in MemoryReflectSchedule: required")
+	}
+	type Plain MemoryReflectSchedule
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 90 < plain.LookbackDays {
+		return fmt.Errorf("field %s: must be <= %v", "lookbackDays", 90)
+	}
+	if 1 > plain.LookbackDays {
+		return fmt.Errorf("field %s: must be >= %v", "lookbackDays", 1)
+	}
+	if matched, _ := regexp.MatchString(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, string(plain.Time)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "Time", `^([01][0-9]|2[0-3]):[0-5][0-9]$`)
+	}
+	if utf8.RuneCountInString(string(plain.Timezone)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "timezone", 1)
+	}
+	if 7 < plain.Weekday {
+		return fmt.Errorf("field %s: must be <= %v", "weekday", 7)
+	}
+	if 1 > plain.Weekday {
+		return fmt.Errorf("field %s: must be >= %v", "weekday", 1)
+	}
+	*j = MemoryReflectSchedule(plain)
+	return nil
+}
+
 // 数据快照，同一发布多次采样看增长曲线（24h/72h/7d，SPEC-006 §2）
 type MetricSnapshot struct {
 	// CapturedAt corresponds to the JSON schema field "capturedAt".
@@ -1016,12 +1115,28 @@ type MetricSnapshot struct {
 	// Metrics corresponds to the JSON schema field "metrics".
 	Metrics EngagementMetrics `json:"metrics" yaml:"metrics" mapstructure:"metrics"`
 
+	// PerformancePercentile corresponds to the JSON schema field
+	// "performancePercentile".
+	PerformancePercentile MetricSnapshotPerformancePercentile `json:"performancePercentile" yaml:"performancePercentile" mapstructure:"performancePercentile"`
+
+	// PerformanceRaw corresponds to the JSON schema field "performanceRaw".
+	PerformanceRaw float64 `json:"performanceRaw" yaml:"performanceRaw" mapstructure:"performanceRaw"`
+
+	// PerformanceWeightVersion corresponds to the JSON schema field
+	// "performanceWeightVersion".
+	PerformanceWeightVersion int `json:"performanceWeightVersion" yaml:"performanceWeightVersion" mapstructure:"performanceWeightVersion"`
+
 	// PublicationId corresponds to the JSON schema field "publicationId".
 	PublicationId string `json:"publicationId" yaml:"publicationId" mapstructure:"publicationId"`
+
+	// SnapshotWindow corresponds to the JSON schema field "snapshotWindow".
+	SnapshotWindow MetricWindow `json:"snapshotWindow" yaml:"snapshotWindow" mapstructure:"snapshotWindow"`
 
 	// Source corresponds to the JSON schema field "source".
 	Source MetricSource `json:"source" yaml:"source" mapstructure:"source"`
 }
+
+type MetricSnapshotPerformancePercentile *float64
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MetricSnapshot) UnmarshalJSON(value []byte) error {
@@ -1038,8 +1153,20 @@ func (j *MetricSnapshot) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["metrics"]; raw != nil && !ok {
 		return fmt.Errorf("field metrics in MetricSnapshot: required")
 	}
+	if _, ok := raw["performancePercentile"]; raw != nil && !ok {
+		return fmt.Errorf("field performancePercentile in MetricSnapshot: required")
+	}
+	if _, ok := raw["performanceRaw"]; raw != nil && !ok {
+		return fmt.Errorf("field performanceRaw in MetricSnapshot: required")
+	}
+	if _, ok := raw["performanceWeightVersion"]; raw != nil && !ok {
+		return fmt.Errorf("field performanceWeightVersion in MetricSnapshot: required")
+	}
 	if _, ok := raw["publicationId"]; raw != nil && !ok {
 		return fmt.Errorf("field publicationId in MetricSnapshot: required")
+	}
+	if _, ok := raw["snapshotWindow"]; raw != nil && !ok {
+		return fmt.Errorf("field snapshotWindow in MetricSnapshot: required")
 	}
 	if _, ok := raw["source"]; raw != nil && !ok {
 		return fmt.Errorf("field source in MetricSnapshot: required")
@@ -1048,6 +1175,12 @@ func (j *MetricSnapshot) UnmarshalJSON(value []byte) error {
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
+	}
+	if 0 > plain.PerformanceRaw {
+		return fmt.Errorf("field %s: must be >= %v", "performanceRaw", 0)
+	}
+	if 1 > plain.PerformanceWeightVersion {
+		return fmt.Errorf("field %s: must be >= %v", "performanceWeightVersion", 1)
 	}
 	*j = MetricSnapshot(plain)
 	return nil
@@ -1082,6 +1215,40 @@ func (j *MetricSource) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_MetricSource, v)
 	}
 	*j = MetricSource(v)
+	return nil
+}
+
+type MetricWindow string
+
+const MetricWindowCustom MetricWindow = "custom"
+const MetricWindowD7 MetricWindow = "d7"
+const MetricWindowH24 MetricWindow = "h24"
+const MetricWindowH72 MetricWindow = "h72"
+
+var enumValues_MetricWindow = []interface{}{
+	"h24",
+	"h72",
+	"d7",
+	"custom",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *MetricWindow) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_MetricWindow {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_MetricWindow, v)
+	}
+	*j = MetricWindow(v)
 	return nil
 }
 
@@ -1506,6 +1673,112 @@ func (j *RawItem) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// Reflector 的结构化建议；确定性代码负责最终状态护栏和数据库更新
+type ReflectorInsightDraft struct {
+	// Action corresponds to the JSON schema field "action".
+	Action ReflectorInsightDraftAction `json:"action" yaml:"action" mapstructure:"action"`
+
+	// Confidence corresponds to the JSON schema field "confidence".
+	Confidence float64 `json:"confidence" yaml:"confidence" mapstructure:"confidence"`
+
+	// Content corresponds to the JSON schema field "content".
+	Content string `json:"content" yaml:"content" mapstructure:"content"`
+
+	// Evidence corresponds to the JSON schema field "evidence".
+	Evidence []InsightEvidence `json:"evidence" yaml:"evidence" mapstructure:"evidence"`
+
+	// ExistingInsightId corresponds to the JSON schema field "existingInsightId".
+	ExistingInsightId ReflectorInsightDraftExistingInsightId `json:"existingInsightId" yaml:"existingInsightId" mapstructure:"existingInsightId"`
+
+	// Kind corresponds to the JSON schema field "kind".
+	Kind InsightKind `json:"kind" yaml:"kind" mapstructure:"kind"`
+
+	// Platform corresponds to the JSON schema field "platform".
+	Platform interface{} `json:"platform" yaml:"platform" mapstructure:"platform"`
+}
+
+type ReflectorInsightDraftAction string
+
+const ReflectorInsightDraftActionContradict ReflectorInsightDraftAction = "contradict"
+const ReflectorInsightDraftActionCreate ReflectorInsightDraftAction = "create"
+const ReflectorInsightDraftActionSupport ReflectorInsightDraftAction = "support"
+
+var enumValues_ReflectorInsightDraftAction = []interface{}{
+	"create",
+	"support",
+	"contradict",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ReflectorInsightDraftAction) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ReflectorInsightDraftAction {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ReflectorInsightDraftAction, v)
+	}
+	*j = ReflectorInsightDraftAction(v)
+	return nil
+}
+
+type ReflectorInsightDraftExistingInsightId *string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ReflectorInsightDraft) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["action"]; raw != nil && !ok {
+		return fmt.Errorf("field action in ReflectorInsightDraft: required")
+	}
+	if _, ok := raw["confidence"]; raw != nil && !ok {
+		return fmt.Errorf("field confidence in ReflectorInsightDraft: required")
+	}
+	if _, ok := raw["content"]; raw != nil && !ok {
+		return fmt.Errorf("field content in ReflectorInsightDraft: required")
+	}
+	if _, ok := raw["evidence"]; raw != nil && !ok {
+		return fmt.Errorf("field evidence in ReflectorInsightDraft: required")
+	}
+	if _, ok := raw["existingInsightId"]; raw != nil && !ok {
+		return fmt.Errorf("field existingInsightId in ReflectorInsightDraft: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in ReflectorInsightDraft: required")
+	}
+	if _, ok := raw["platform"]; raw != nil && !ok {
+		return fmt.Errorf("field platform in ReflectorInsightDraft: required")
+	}
+	type Plain ReflectorInsightDraft
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 1 < plain.Confidence {
+		return fmt.Errorf("field %s: must be <= %v", "confidence", 1)
+	}
+	if 0 > plain.Confidence {
+		return fmt.Errorf("field %s: must be >= %v", "confidence", 0)
+	}
+	if utf8.RuneCountInString(string(plain.Content)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "content", 1)
+	}
+	if plain.Evidence != nil && len(plain.Evidence) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "evidence", 1)
+	}
+	*j = ReflectorInsightDraft(plain)
+	return nil
+}
+
 // 回炉重写上下文（SPEC-005 §2）
 type RewriteContext struct {
 	// EvaluationFeedback corresponds to the JSON schema field "evaluationFeedback".
@@ -1723,6 +1996,9 @@ func (j *RubricDimension) UnmarshalJSON(value []byte) error {
 
 // 全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。
 type SchedulerSettings struct {
+	// MemoryReflect corresponds to the JSON schema field "memoryReflect".
+	MemoryReflect MemoryReflectSchedule `json:"memoryReflect" yaml:"memoryReflect" mapstructure:"memoryReflect"`
+
 	// SourceFetch corresponds to the JSON schema field "sourceFetch".
 	SourceFetch SourceFetchSchedule `json:"sourceFetch" yaml:"sourceFetch" mapstructure:"sourceFetch"`
 
@@ -1738,6 +2014,9 @@ func (j *SchedulerSettings) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
+	}
+	if _, ok := raw["memoryReflect"]; raw != nil && !ok {
+		return fmt.Errorf("field memoryReflect in SchedulerSettings: required")
 	}
 	if _, ok := raw["sourceFetch"]; raw != nil && !ok {
 		return fmt.Errorf("field sourceFetch in SchedulerSettings: required")
@@ -2578,6 +2857,79 @@ func (j *Topic) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s length: must be >= %d", "title", 1)
 	}
 	*j = Topic(plain)
+	return nil
+}
+
+// 每周反思与评分校准报告
+type WeeklyReport struct {
+	// AgentRunId corresponds to the JSON schema field "agentRunId".
+	AgentRunId WeeklyReportAgentRunId `json:"agentRunId" yaml:"agentRunId" mapstructure:"agentRunId"`
+
+	// Calibration corresponds to the JSON schema field "calibration".
+	Calibration WeeklyReportCalibration `json:"calibration" yaml:"calibration" mapstructure:"calibration"`
+
+	// CreatedAt corresponds to the JSON schema field "createdAt".
+	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" mapstructure:"createdAt"`
+
+	// Id corresponds to the JSON schema field "id".
+	Id string `json:"id" yaml:"id" mapstructure:"id"`
+
+	// PeriodEnd corresponds to the JSON schema field "periodEnd".
+	PeriodEnd time.Time `json:"periodEnd" yaml:"periodEnd" mapstructure:"periodEnd"`
+
+	// PeriodStart corresponds to the JSON schema field "periodStart".
+	PeriodStart time.Time `json:"periodStart" yaml:"periodStart" mapstructure:"periodStart"`
+
+	// SampleCount corresponds to the JSON schema field "sampleCount".
+	SampleCount int `json:"sampleCount" yaml:"sampleCount" mapstructure:"sampleCount"`
+
+	// SummaryMarkdown corresponds to the JSON schema field "summaryMarkdown".
+	SummaryMarkdown string `json:"summaryMarkdown" yaml:"summaryMarkdown" mapstructure:"summaryMarkdown"`
+}
+
+type WeeklyReportAgentRunId *string
+
+type WeeklyReportCalibration map[string]interface{}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WeeklyReport) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["agentRunId"]; raw != nil && !ok {
+		return fmt.Errorf("field agentRunId in WeeklyReport: required")
+	}
+	if _, ok := raw["calibration"]; raw != nil && !ok {
+		return fmt.Errorf("field calibration in WeeklyReport: required")
+	}
+	if _, ok := raw["createdAt"]; raw != nil && !ok {
+		return fmt.Errorf("field createdAt in WeeklyReport: required")
+	}
+	if _, ok := raw["id"]; raw != nil && !ok {
+		return fmt.Errorf("field id in WeeklyReport: required")
+	}
+	if _, ok := raw["periodEnd"]; raw != nil && !ok {
+		return fmt.Errorf("field periodEnd in WeeklyReport: required")
+	}
+	if _, ok := raw["periodStart"]; raw != nil && !ok {
+		return fmt.Errorf("field periodStart in WeeklyReport: required")
+	}
+	if _, ok := raw["sampleCount"]; raw != nil && !ok {
+		return fmt.Errorf("field sampleCount in WeeklyReport: required")
+	}
+	if _, ok := raw["summaryMarkdown"]; raw != nil && !ok {
+		return fmt.Errorf("field summaryMarkdown in WeeklyReport: required")
+	}
+	type Plain WeeklyReport
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 0 > plain.SampleCount {
+		return fmt.Errorf("field %s: must be >= %v", "sampleCount", 0)
+	}
+	*j = WeeklyReport(plain)
 	return nil
 }
 

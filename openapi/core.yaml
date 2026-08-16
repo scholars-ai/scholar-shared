@@ -269,6 +269,207 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
+  /v1/publications:
+    get:
+      operationId: listPublications
+      summary: 发布记录、标准快照完成度与待录提醒
+      parameters:
+        - name: platform
+          in: query
+          schema:
+            $ref: "#/components/schemas/Platform"
+        - name: remindersOnly
+          in: query
+          schema: { type: boolean, default: false }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationPerformanceList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/publications/{publicationId}/metrics:
+    get:
+      operationId: listMetricSnapshots
+      summary: 一次发布的全部累计指标快照
+      parameters:
+        - $ref: "#/components/parameters/PublicationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MetricSnapshot"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createMetricSnapshot
+      summary: 录入一条 24h/72h/7d 或自定义累计指标快照
+      parameters:
+        - $ref: "#/components/parameters/PublicationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMetricSnapshotRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricSnapshot"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /v1/metrics/import:
+    post:
+      operationId: importMetricSnapshots
+      summary: 原子批量导入 Client 已解析和预检查的 CSV 指标
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportMetricSnapshotsRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportMetricSnapshotsResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /v1/performance/dashboard:
+    get:
+      operationId: getPerformanceDashboard
+      summary: 平台内表现分分布、快照覆盖和近期 high/low case
+      parameters:
+        - name: platform
+          in: query
+          schema:
+            $ref: "#/components/schemas/Platform"
+        - name: days
+          in: query
+          schema: { type: integer, minimum: 7, maximum: 365, default: 90 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformanceDashboard"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/insights:
+    get:
+      operationId: listInsights
+      summary: Reflector 经验库
+      parameters:
+        - name: kind
+          in: query
+          schema:
+            $ref: "#/components/schemas/InsightKind"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/InsightStatus"
+        - name: platform
+          in: query
+          schema:
+            $ref: "#/components/schemas/Platform"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Insight"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/insights/{insightId}:
+    patch:
+      operationId: updateInsight
+      summary: 人工启用或退役一条经验
+      parameters:
+        - $ref: "#/components/parameters/InsightId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInsightRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Insight"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/reports/weekly:
+    get:
+      operationId: listWeeklyReports
+      summary: 周度归因与评分校准报告
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 52, default: 12 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeeklyReport"
+  /v1/reflections/run:
+    post:
+      operationId: triggerMemoryReflect
+      summary: 手动触发指定周期或最近七天的反思
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerMemoryReflectRequest"
+      responses:
+        "202":
+          description: 已入队
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   /v1/sources:
     get:
       operationId: listSources
@@ -451,6 +652,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    PublicationId:
+      name: publicationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    InsightId:
+      name: insightId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   responses:
     BadRequest:
       description: 请求非法
@@ -594,6 +805,237 @@ components:
         editRatio: { type: number, nullable: true, minimum: 0, maximum: 1 }
         followerCountAtPublish: { type: integer, nullable: true, minimum: 0 }
         createdAt: { type: string, format: date-time }
+    MetricSource:
+      type: string
+      enum: [manual, import, api]
+    MetricWindow:
+      type: string
+      enum: [h24, h72, d7, custom]
+    EngagementMetrics:
+      type: object
+      required: [views, likes, favorites, comments, shares, follows]
+      properties:
+        views: { type: integer, nullable: true, minimum: 0 }
+        likes: { type: integer, nullable: true, minimum: 0 }
+        favorites: { type: integer, nullable: true, minimum: 0 }
+        comments: { type: integer, nullable: true, minimum: 0 }
+        shares: { type: integer, nullable: true, minimum: 0 }
+        follows: { type: integer, nullable: true, minimum: 0 }
+    CreateMetricSnapshotRequest:
+      type: object
+      required: [snapshotWindow, capturedAt, metrics]
+      properties:
+        snapshotWindow:
+          $ref: "#/components/schemas/MetricWindow"
+        capturedAt: { type: string, format: date-time }
+        metrics:
+          $ref: "#/components/schemas/EngagementMetrics"
+    MetricSnapshotImportItem:
+      allOf:
+        - $ref: "#/components/schemas/CreateMetricSnapshotRequest"
+        - type: object
+          required: [publicationId]
+          properties:
+            publicationId: { type: string, format: uuid }
+    ImportMetricSnapshotsRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            $ref: "#/components/schemas/MetricSnapshotImportItem"
+    ImportMetricSnapshotsResult:
+      type: object
+      required: [imported, snapshots]
+      properties:
+        imported: { type: integer, minimum: 1 }
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricSnapshot"
+    MetricSnapshot:
+      type: object
+      required: [id, publicationId, capturedAt, snapshotWindow, metrics, source, performanceRaw, performancePercentile, performanceWeightVersion, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        publicationId: { type: string, format: uuid }
+        capturedAt: { type: string, format: date-time }
+        snapshotWindow:
+          $ref: "#/components/schemas/MetricWindow"
+        metrics:
+          $ref: "#/components/schemas/EngagementMetrics"
+        source:
+          $ref: "#/components/schemas/MetricSource"
+        performanceRaw: { type: number, minimum: 0 }
+        performancePercentile: { type: number, nullable: true, minimum: 0, maximum: 100 }
+        performanceWeightVersion: { type: integer, minimum: 1 }
+        createdAt: { type: string, format: date-time }
+    MetricReminder:
+      type: object
+      required: [snapshotWindow, dueAt, overdue]
+      properties:
+        snapshotWindow:
+          $ref: "#/components/schemas/MetricWindow"
+        dueAt: { type: string, format: date-time }
+        overdue: { type: boolean }
+    PublicationPerformance:
+      type: object
+      required: [publication, articleTitle, topicTitle, snapshots, reminders]
+      properties:
+        publication:
+          $ref: "#/components/schemas/Publication"
+        articleTitle: { type: string }
+        topicTitle: { type: string }
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricSnapshot"
+        reminders:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricReminder"
+    PublicationPerformanceList:
+      type: object
+      required: [items, total, overdueCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicationPerformance"
+        total: { type: integer, minimum: 0 }
+        overdueCount: { type: integer, minimum: 0 }
+    PerformanceCase:
+      type: object
+      required: [publicationId, articleId, platform, title, snapshotWindow, percentile, performanceRaw, capturedAt, band]
+      properties:
+        publicationId: { type: string, format: uuid }
+        articleId: { type: string, format: uuid }
+        platform:
+          $ref: "#/components/schemas/Platform"
+        title: { type: string }
+        snapshotWindow:
+          $ref: "#/components/schemas/MetricWindow"
+        percentile: { type: number, minimum: 0, maximum: 100 }
+        performanceRaw: { type: number, minimum: 0 }
+        capturedAt: { type: string, format: date-time }
+        band: { type: string, enum: [high, normal, low] }
+    PlatformPerformanceSummary:
+      type: object
+      required: [platform, publications, snapshots, complete24h, complete72h, complete7d, highCount, lowCount]
+      properties:
+        platform:
+          $ref: "#/components/schemas/Platform"
+        publications: { type: integer, minimum: 0 }
+        snapshots: { type: integer, minimum: 0 }
+        complete24h: { type: integer, minimum: 0 }
+        complete72h: { type: integer, minimum: 0 }
+        complete7d: { type: integer, minimum: 0 }
+        highCount: { type: integer, minimum: 0 }
+        lowCount: { type: integer, minimum: 0 }
+    PerformanceDashboard:
+      type: object
+      required: [days, summaries, cases]
+      properties:
+        days: { type: integer, minimum: 7 }
+        summaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlatformPerformanceSummary"
+        cases:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerformanceCase"
+    InsightKind:
+      type: string
+      enum: [topic_lesson, writing_lesson, platform_lesson, source_lesson]
+    InsightStatus:
+      type: string
+      enum: [candidate, active, retired]
+    InsightEvidence:
+      type: object
+      required: [articleIds, publicationIds, note]
+      properties:
+        articleIds:
+          type: array
+          items: { type: string, format: uuid }
+        publicationIds:
+          type: array
+          items: { type: string, format: uuid }
+        note: { type: string, minLength: 1 }
+    Insight:
+      type: object
+      required: [id, kind, platform, content, evidence, confidence, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind:
+          $ref: "#/components/schemas/InsightKind"
+        platform:
+          allOf:
+            - $ref: "#/components/schemas/Platform"
+          nullable: true
+        content: { type: string }
+        evidence:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/InsightEvidence"
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        status:
+          $ref: "#/components/schemas/InsightStatus"
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    UpdateInsightRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, retired]
+    CorrelationResult:
+      type: object
+      required: [key, sampleSize, coefficient]
+      properties:
+        key: { type: string }
+        sampleSize: { type: integer, minimum: 0 }
+        coefficient: { type: number, nullable: true, minimum: -1, maximum: 1 }
+    CalibrationReport:
+      type: object
+      required: [coldStart, correlations, highCases, lowCases]
+      properties:
+        coldStart: { type: boolean }
+        correlations:
+          type: array
+          items:
+            $ref: "#/components/schemas/CorrelationResult"
+        highCases:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerformanceCase"
+        lowCases:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerformanceCase"
+    WeeklyReport:
+      type: object
+      required: [id, periodStart, periodEnd, sampleCount, summaryMarkdown, calibration, agentRunId, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        periodStart: { type: string, format: date-time }
+        periodEnd: { type: string, format: date-time }
+        sampleCount: { type: integer, minimum: 0 }
+        summaryMarkdown: { type: string }
+        calibration:
+          $ref: "#/components/schemas/CalibrationReport"
+        agentRunId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+    TriggerMemoryReflectRequest:
+      type: object
+      properties:
+        periodStart: { type: string, format: date-time }
+        periodEnd: { type: string, format: date-time }
     ArticleReview:
       type: object
       required: [article, topicTitle, publicationCount]
@@ -808,9 +1250,18 @@ components:
       properties:
         enabled: { type: boolean }
         maxConcurrency: { type: integer, minimum: 1, maximum: 32 }
+    MemoryReflectSchedule:
+      type: object
+      required: [enabled, weekday, time, timezone, lookbackDays]
+      properties:
+        enabled: { type: boolean }
+        weekday: { type: integer, minimum: 1, maximum: 7 }
+        time: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+        timezone: { type: string, minLength: 1 }
+        lookbackDays: { type: integer, minimum: 1, maximum: 90 }
     SchedulerSettings:
       type: object
-      required: [sourceFetch, topicScout, topicEvaluate]
+      required: [sourceFetch, topicScout, topicEvaluate, memoryReflect]
       properties:
         sourceFetch:
           $ref: "#/components/schemas/SourceFetchSchedule"
@@ -818,6 +1269,8 @@ components:
           $ref: "#/components/schemas/TopicScoutSchedule"
         topicEvaluate:
           $ref: "#/components/schemas/TopicEvaluateSchedule"
+        memoryReflect:
+          $ref: "#/components/schemas/MemoryReflectSchedule"
     SchedulerSettingsPatch:
       type: object
       description: 仅传需要改的分组
@@ -828,3 +1281,5 @@ components:
           $ref: "#/components/schemas/TopicScoutSchedule"
         topicEvaluate:
           $ref: "#/components/schemas/TopicEvaluateSchedule"
+        memoryReflect:
+          $ref: "#/components/schemas/MemoryReflectSchedule"

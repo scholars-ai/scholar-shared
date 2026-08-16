@@ -48,6 +48,13 @@ export type ArticleStatus =
  */
 export type MetricSource = "manual" | "import" | "api";
 /**
+ * 标准表现采样窗口；custom 不参与平台百分位比较
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "MetricWindow".
+ */
+export type MetricWindow = "h24" | "h72" | "d7" | "custom";
+/**
  * 反思经验类别（SPEC-006 §4）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
@@ -330,8 +337,12 @@ export interface MetricSnapshot {
   id: string;
   publicationId: string;
   capturedAt: string;
+  snapshotWindow: MetricWindow;
   metrics: EngagementMetrics;
   source: MetricSource;
+  performanceRaw: number;
+  performancePercentile: number | null;
+  performanceWeightVersion: number;
 }
 /**
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
@@ -362,6 +373,52 @@ export interface Insight {
   evidence: [InsightEvidence, ...InsightEvidence[]];
   confidence: number;
   status: InsightStatus;
+}
+/**
+ * Reflector 的结构化建议；确定性代码负责最终状态护栏和数据库更新
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "ReflectorInsightDraft".
+ */
+export interface ReflectorInsightDraft {
+  action: "create" | "support" | "contradict";
+  existingInsightId: string | null;
+  kind: InsightKind;
+  platform: Platform | null;
+  content: string;
+  /**
+   * @minItems 1
+   */
+  evidence: [InsightEvidence, ...InsightEvidence[]];
+  confidence: number;
+}
+/**
+ * memory.reflect 的 LLM 输出；统计与相关性不由模型计算
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "MemoryReflectOutput".
+ */
+export interface MemoryReflectOutput {
+  summaryMarkdown: string;
+  insights: ReflectorInsightDraft[];
+}
+/**
+ * 每周反思与评分校准报告
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WeeklyReport".
+ */
+export interface WeeklyReport {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  sampleCount: number;
+  summaryMarkdown: string;
+  calibration: {
+    [k: string]: unknown;
+  };
+  agentRunId: string | null;
+  createdAt: string;
 }
 /**
  * Agent 运行留痕（成本/溯源，SPEC-002）
@@ -515,6 +572,7 @@ export interface SchedulerSettings {
   sourceFetch: SourceFetchSchedule;
   topicScout: TopicScoutSchedule;
   topicEvaluate: TopicEvaluateSchedule;
+  memoryReflect: MemoryReflectSchedule;
 }
 /**
  * 采集调度：全局默认间隔，可被 sources.fetchConfig.intervalMinutes 逐源覆盖
@@ -562,6 +620,19 @@ export interface TopicScoutSchedule {
 export interface TopicEvaluateSchedule {
   enabled: boolean;
   maxConcurrency: number;
+}
+/**
+ * 每周反思调度；weekday 使用 ISO 周序号 1=周一…7=周日
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "MemoryReflectSchedule".
+ */
+export interface MemoryReflectSchedule {
+  enabled: boolean;
+  weekday: number;
+  time: string;
+  timezone: string;
+  lookbackDays: number;
 }
 /**
  * 信源采集健康状态（client 信源管理页展示；连续失败需告警）

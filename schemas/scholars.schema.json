@@ -41,6 +41,11 @@
       "type": "string",
       "enum": ["manual", "import", "api"]
     },
+    "MetricWindow": {
+      "description": "标准表现采样窗口；custom 不参与平台百分位比较",
+      "type": "string",
+      "enum": ["h24", "h72", "d7", "custom"]
+    },
     "InsightKind": {
       "description": "反思经验类别（SPEC-006 §4）",
       "type": "string",
@@ -237,13 +242,17 @@
       "description": "数据快照，同一发布多次采样看增长曲线（24h/72h/7d，SPEC-006 §2）",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "publicationId", "capturedAt", "metrics", "source"],
+      "required": ["id", "publicationId", "capturedAt", "snapshotWindow", "metrics", "source", "performanceRaw", "performancePercentile", "performanceWeightVersion"],
       "properties": {
         "id": { "type": "string", "format": "uuid" },
         "publicationId": { "type": "string", "format": "uuid" },
         "capturedAt": { "type": "string", "format": "date-time" },
+        "snapshotWindow": { "$ref": "#/definitions/MetricWindow" },
         "metrics": { "$ref": "#/definitions/EngagementMetrics" },
-        "source": { "$ref": "#/definitions/MetricSource" }
+        "source": { "$ref": "#/definitions/MetricSource" },
+        "performanceRaw": { "type": "number", "minimum": 0 },
+        "performancePercentile": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "performanceWeightVersion": { "type": "integer", "minimum": 1 }
       }
     },
     "InsightEvidence": {
@@ -271,6 +280,47 @@
         "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/InsightEvidence" } },
         "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
         "status": { "$ref": "#/definitions/InsightStatus" }
+      }
+    },
+    "ReflectorInsightDraft": {
+      "description": "Reflector 的结构化建议；确定性代码负责最终状态护栏和数据库更新",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "existingInsightId", "kind", "platform", "content", "evidence", "confidence"],
+      "properties": {
+        "action": { "type": "string", "enum": ["create", "support", "contradict"] },
+        "existingInsightId": { "type": ["string", "null"], "format": "uuid" },
+        "kind": { "$ref": "#/definitions/InsightKind" },
+        "platform": { "oneOf": [{ "$ref": "#/definitions/Platform" }, { "type": "null" }] },
+        "content": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/InsightEvidence" } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "MemoryReflectOutput": {
+      "description": "memory.reflect 的 LLM 输出；统计与相关性不由模型计算",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summaryMarkdown", "insights"],
+      "properties": {
+        "summaryMarkdown": { "type": "string", "minLength": 1 },
+        "insights": { "type": "array", "items": { "$ref": "#/definitions/ReflectorInsightDraft" } }
+      }
+    },
+    "WeeklyReport": {
+      "description": "每周反思与评分校准报告",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "periodStart", "periodEnd", "sampleCount", "summaryMarkdown", "calibration", "agentRunId", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "periodStart": { "type": "string", "format": "date-time" },
+        "periodEnd": { "type": "string", "format": "date-time" },
+        "sampleCount": { "type": "integer", "minimum": 0 },
+        "summaryMarkdown": { "type": "string" },
+        "calibration": { "type": "object", "additionalProperties": true },
+        "agentRunId": { "type": ["string", "null"], "format": "uuid" },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "AgentRun": {
@@ -412,11 +462,12 @@
       "description": "全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。",
       "type": "object",
       "additionalProperties": false,
-      "required": ["sourceFetch", "topicScout", "topicEvaluate"],
+      "required": ["sourceFetch", "topicScout", "topicEvaluate", "memoryReflect"],
       "properties": {
         "sourceFetch": { "$ref": "#/definitions/SourceFetchSchedule" },
         "topicScout": { "$ref": "#/definitions/TopicScoutSchedule" },
-        "topicEvaluate": { "$ref": "#/definitions/TopicEvaluateSchedule" }
+        "topicEvaluate": { "$ref": "#/definitions/TopicEvaluateSchedule" },
+        "memoryReflect": { "$ref": "#/definitions/MemoryReflectSchedule" }
       }
     },
     "SourceFetchSchedule": {
@@ -455,6 +506,19 @@
       "properties": {
         "enabled": { "type": "boolean" },
         "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 32 }
+      }
+    },
+    "MemoryReflectSchedule": {
+      "description": "每周反思调度；weekday 使用 ISO 周序号 1=周一…7=周日",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "weekday", "time", "timezone", "lookbackDays"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "weekday": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "time": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "timezone": { "type": "string", "minLength": 1 },
+        "lookbackDays": { "type": "integer", "minimum": 1, "maximum": 90 }
       }
     },
     "SourceHealth": {

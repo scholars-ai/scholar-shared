@@ -209,6 +209,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 发布记录、标准快照完成度与待录提醒 */
+        get: operations["listPublications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/publications/{publicationId}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 一次发布的全部累计指标快照 */
+        get: operations["listMetricSnapshots"];
+        put?: never;
+        /** 录入一条 24h/72h/7d 或自定义累计指标快照 */
+        post: operations["createMetricSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/metrics/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 原子批量导入 Client 已解析和预检查的 CSV 指标 */
+        post: operations["importMetricSnapshots"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/performance/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 平台内表现分分布、快照覆盖和近期 high/low case */
+        get: operations["getPerformanceDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reflector 经验库 */
+        get: operations["listInsights"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/insights/{insightId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 人工启用或退役一条经验 */
+        patch: operations["updateInsight"];
+        trace?: never;
+    };
+    "/v1/reports/weekly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 周度归因与评分校准报告 */
+        get: operations["listWeeklyReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reflections/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 手动触发指定周期或最近七天的反思 */
+        post: operations["triggerMemoryReflect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sources": {
         parameters: {
             query?: never;
@@ -420,6 +557,158 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /** @enum {string} */
+        MetricSource: "manual" | "import" | "api";
+        /** @enum {string} */
+        MetricWindow: "h24" | "h72" | "d7" | "custom";
+        EngagementMetrics: {
+            views: number | null;
+            likes: number | null;
+            favorites: number | null;
+            comments: number | null;
+            shares: number | null;
+            follows: number | null;
+        };
+        CreateMetricSnapshotRequest: {
+            snapshotWindow: components["schemas"]["MetricWindow"];
+            /** Format: date-time */
+            capturedAt: string;
+            metrics: components["schemas"]["EngagementMetrics"];
+        };
+        MetricSnapshotImportItem: components["schemas"]["CreateMetricSnapshotRequest"] & {
+            /** Format: uuid */
+            publicationId: string;
+        };
+        ImportMetricSnapshotsRequest: {
+            items: components["schemas"]["MetricSnapshotImportItem"][];
+        };
+        ImportMetricSnapshotsResult: {
+            imported: number;
+            snapshots: components["schemas"]["MetricSnapshot"][];
+        };
+        MetricSnapshot: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            publicationId: string;
+            /** Format: date-time */
+            capturedAt: string;
+            snapshotWindow: components["schemas"]["MetricWindow"];
+            metrics: components["schemas"]["EngagementMetrics"];
+            source: components["schemas"]["MetricSource"];
+            performanceRaw: number;
+            performancePercentile: number | null;
+            performanceWeightVersion: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MetricReminder: {
+            snapshotWindow: components["schemas"]["MetricWindow"];
+            /** Format: date-time */
+            dueAt: string;
+            overdue: boolean;
+        };
+        PublicationPerformance: {
+            publication: components["schemas"]["Publication"];
+            articleTitle: string;
+            topicTitle: string;
+            snapshots: components["schemas"]["MetricSnapshot"][];
+            reminders: components["schemas"]["MetricReminder"][];
+        };
+        PublicationPerformanceList: {
+            items: components["schemas"]["PublicationPerformance"][];
+            total: number;
+            overdueCount: number;
+        };
+        PerformanceCase: {
+            /** Format: uuid */
+            publicationId: string;
+            /** Format: uuid */
+            articleId: string;
+            platform: components["schemas"]["Platform"];
+            title: string;
+            snapshotWindow: components["schemas"]["MetricWindow"];
+            percentile: number;
+            performanceRaw: number;
+            /** Format: date-time */
+            capturedAt: string;
+            /** @enum {string} */
+            band: "high" | "normal" | "low";
+        };
+        PlatformPerformanceSummary: {
+            platform: components["schemas"]["Platform"];
+            publications: number;
+            snapshots: number;
+            complete24h: number;
+            complete72h: number;
+            complete7d: number;
+            highCount: number;
+            lowCount: number;
+        };
+        PerformanceDashboard: {
+            days: number;
+            summaries: components["schemas"]["PlatformPerformanceSummary"][];
+            cases: components["schemas"]["PerformanceCase"][];
+        };
+        /** @enum {string} */
+        InsightKind: "topic_lesson" | "writing_lesson" | "platform_lesson" | "source_lesson";
+        /** @enum {string} */
+        InsightStatus: "candidate" | "active" | "retired";
+        InsightEvidence: {
+            articleIds: string[];
+            publicationIds: string[];
+            note: string;
+        };
+        Insight: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["InsightKind"];
+            platform: components["schemas"]["Platform"] | null;
+            content: string;
+            evidence: components["schemas"]["InsightEvidence"][];
+            confidence: number;
+            status: components["schemas"]["InsightStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateInsightRequest: {
+            /** @enum {string} */
+            status: "active" | "retired";
+        };
+        CorrelationResult: {
+            key: string;
+            sampleSize: number;
+            coefficient: number | null;
+        };
+        CalibrationReport: {
+            coldStart: boolean;
+            correlations: components["schemas"]["CorrelationResult"][];
+            highCases: components["schemas"]["PerformanceCase"][];
+            lowCases: components["schemas"]["PerformanceCase"][];
+        };
+        WeeklyReport: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            periodStart: string;
+            /** Format: date-time */
+            periodEnd: string;
+            sampleCount: number;
+            summaryMarkdown: string;
+            calibration: components["schemas"]["CalibrationReport"];
+            /** Format: uuid */
+            agentRunId: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        TriggerMemoryReflectRequest: {
+            /** Format: date-time */
+            periodStart?: string;
+            /** Format: date-time */
+            periodEnd?: string;
+        };
         ArticleReview: {
             article: components["schemas"]["Article"];
             topicTitle: string;
@@ -566,16 +855,25 @@ export interface components {
             enabled: boolean;
             maxConcurrency: number;
         };
+        MemoryReflectSchedule: {
+            enabled: boolean;
+            weekday: number;
+            time: string;
+            timezone: string;
+            lookbackDays: number;
+        };
         SchedulerSettings: {
             sourceFetch: components["schemas"]["SourceFetchSchedule"];
             topicScout: components["schemas"]["TopicScoutSchedule"];
             topicEvaluate: components["schemas"]["TopicEvaluateSchedule"];
+            memoryReflect: components["schemas"]["MemoryReflectSchedule"];
         };
         /** @description 仅传需要改的分组 */
         SchedulerSettingsPatch: {
             sourceFetch?: components["schemas"]["SourceFetchSchedule"];
             topicScout?: components["schemas"]["TopicScoutSchedule"];
             topicEvaluate?: components["schemas"]["TopicEvaluateSchedule"];
+            memoryReflect?: components["schemas"]["MemoryReflectSchedule"];
         };
     };
     responses: {
@@ -611,6 +909,8 @@ export interface components {
         TopicId: string;
         SourceId: string;
         ArticleId: string;
+        PublicationId: string;
+        InsightId: string;
     };
     requestBodies: never;
     headers: never;
@@ -940,6 +1240,235 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    listPublications: {
+        parameters: {
+            query?: {
+                platform?: components["schemas"]["Platform"];
+                remindersOnly?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationPerformanceList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    listMetricSnapshots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: components["parameters"]["PublicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricSnapshot"][];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createMetricSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: components["parameters"]["PublicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMetricSnapshotRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricSnapshot"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    importMetricSnapshots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportMetricSnapshotsRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportMetricSnapshotsResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getPerformanceDashboard: {
+        parameters: {
+            query?: {
+                platform?: components["schemas"]["Platform"];
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerformanceDashboard"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    listInsights: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["InsightKind"];
+                status?: components["schemas"]["InsightStatus"];
+                platform?: components["schemas"]["Platform"];
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insight"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    updateInsight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                insightId: components["parameters"]["InsightId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInsightRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insight"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listWeeklyReports: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyReport"][];
+                };
+            };
+        };
+    };
+    triggerMemoryReflect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TriggerMemoryReflectRequest"];
+            };
+        };
+        responses: {
+            /** @description 已入队 */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
         };
     };
     listSources: {

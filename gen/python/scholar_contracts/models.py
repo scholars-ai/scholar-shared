@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 from uuid import UUID
 
 from pydantic import (
@@ -94,6 +95,17 @@ class MetricSource(StrEnum):
     manual = 'manual'
     import_ = 'import'
     api = 'api'
+
+
+class MetricWindow(StrEnum):
+    """
+    标准表现采样窗口；custom 不参与平台百分位比较
+    """
+
+    h24 = 'h24'
+    h72 = 'h72'
+    d7 = 'd7'
+    custom = 'custom'
 
 
 class InsightKind(StrEnum):
@@ -345,8 +357,12 @@ class MetricSnapshot(BaseModel):
     id: UUID
     publicationId: UUID
     capturedAt: AwareDatetime
+    snapshotWindow: MetricWindow
     metrics: EngagementMetrics
     source: MetricSource
+    performanceRaw: confloat(ge=0.0)
+    performancePercentile: confloat(ge=0.0, le=100.0) | None
+    performanceWeightVersion: conint(ge=1)
 
 
 class InsightEvidence(BaseModel):
@@ -376,6 +392,59 @@ class Insight(BaseModel):
     evidence: list[InsightEvidence] = Field(..., min_length=1)
     confidence: confloat(ge=0.0, le=1.0)
     status: InsightStatus
+
+
+class Action(StrEnum):
+    create = 'create'
+    support = 'support'
+    contradict = 'contradict'
+
+
+class ReflectorInsightDraft(BaseModel):
+    """
+    Reflector 的结构化建议；确定性代码负责最终状态护栏和数据库更新
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    action: Action
+    existingInsightId: UUID | None
+    kind: InsightKind
+    platform: Platform | None
+    content: constr(min_length=1)
+    evidence: list[InsightEvidence] = Field(..., min_length=1)
+    confidence: confloat(ge=0.0, le=1.0)
+
+
+class MemoryReflectOutput(BaseModel):
+    """
+    memory.reflect 的 LLM 输出；统计与相关性不由模型计算
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    summaryMarkdown: constr(min_length=1)
+    insights: list[ReflectorInsightDraft]
+
+
+class WeeklyReport(BaseModel):
+    """
+    每周反思与评分校准报告
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: UUID
+    periodStart: AwareDatetime
+    periodEnd: AwareDatetime
+    sampleCount: conint(ge=0)
+    summaryMarkdown: str
+    calibration: dict[str, Any]
+    agentRunId: UUID | None
+    createdAt: AwareDatetime
 
 
 class AgentRun(BaseModel):
@@ -599,6 +668,21 @@ class TopicEvaluateSchedule(BaseModel):
     maxConcurrency: conint(ge=1, le=32)
 
 
+class MemoryReflectSchedule(BaseModel):
+    """
+    每周反思调度；weekday 使用 ISO 周序号 1=周一…7=周日
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    enabled: bool
+    weekday: conint(ge=1, le=7)
+    time: constr(pattern=r'^([01][0-9]|2[0-3]):[0-5][0-9]$')
+    timezone: constr(min_length=1)
+    lookbackDays: conint(ge=1, le=90)
+
+
 class SourceHealth(BaseModel):
     """
     信源采集健康状态（client 信源管理页展示；连续失败需告警）
@@ -800,6 +884,7 @@ class SchedulerSettings(BaseModel):
     sourceFetch: SourceFetchSchedule
     topicScout: TopicScoutSchedule
     topicEvaluate: TopicEvaluateSchedule
+    memoryReflect: MemoryReflectSchedule
 
 
 class DimensionScores(BaseModel):

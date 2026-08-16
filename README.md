@@ -28,7 +28,7 @@ scripts/validate.py            契约自检（schema 合法/权重归一/队列�
 
 - **Go（core）**：`require github.com/scholars-ai/scholar-shared/gen/go`
 - **Python（agents）**：以 git 子路径依赖引入 `gen/python/scholar_contracts`
-- **TS（client）**：`@scholars-ai/contracts` 发布到 npmjs.com；GitHub Actions 通过 npm Trusted Publishing/OIDC 发布，不保存长期 npm token
+- **TS（client）**：`@scholars-ai/contracts` 发布到 npmjs.com；GitHub Actions 通过 npm Trusted Publishing/OIDC 发布，不保存长期 npm token。`0.5.0` 起包含 M3 的指标快照、表现面板、Insights、周报与反思调度 API
 
 ## 发布 TypeScript 契约
 
