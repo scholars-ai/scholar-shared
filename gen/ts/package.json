@@ -1,6 +1,6 @@
 {
   "name": "@scholars-ai/contracts",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Generated TypeScript contracts for Scholars AI",
   "license": "MIT",
   "type": "module",
@@ -16,6 +16,10 @@
     "./core-api": {
       "types": "./core-api.d.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
