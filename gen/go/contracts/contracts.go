@@ -243,6 +243,9 @@ func (j *ArticleAsset) UnmarshalJSON(value []byte) error {
 
 // queue: article_evaluate
 type ArticleEvaluateJob struct {
+	// Meta corresponds to the JSON schema field "_meta".
+	Meta *JobTelemetryMeta `json:"_meta,omitempty,omitzero" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
+
 	// ArticleId corresponds to the JSON schema field "articleId".
 	ArticleId string `json:"articleId" yaml:"articleId" mapstructure:"articleId"`
 
@@ -342,6 +345,9 @@ func (j *ArticleStatus) UnmarshalJSON(value []byte) error {
 
 // queue: article_write
 type ArticleWriteJob struct {
+	// Meta corresponds to the JSON schema field "_meta".
+	Meta *JobTelemetryMeta `json:"_meta,omitempty,omitzero" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
+
 	// Platform corresponds to the JSON schema field "platform".
 	Platform Platform `json:"platform" yaml:"platform" mapstructure:"platform"`
 
@@ -855,8 +861,107 @@ func (j *JobResult) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// 跨队列传播的可选遥测元数据。旧消息可以不包含 _meta；Consumer 缺失时创建新的 root trace。
+type JobTelemetryMeta struct {
+	// Baggage corresponds to the JSON schema field "baggage".
+	Baggage JobTelemetryMetaBaggage `json:"baggage,omitempty,omitzero" yaml:"baggage,omitempty" mapstructure:"baggage,omitempty"`
+
+	// CorrelationId corresponds to the JSON schema field "correlationId".
+	CorrelationId string `json:"correlationId" yaml:"correlationId" mapstructure:"correlationId"`
+
+	// EnqueuedAt corresponds to the JSON schema field "enqueuedAt".
+	EnqueuedAt time.Time `json:"enqueuedAt" yaml:"enqueuedAt" mapstructure:"enqueuedAt"`
+
+	// JobId corresponds to the JSON schema field "jobId".
+	JobId string `json:"jobId" yaml:"jobId" mapstructure:"jobId"`
+
+	// ParentJobId corresponds to the JSON schema field "parentJobId".
+	ParentJobId JobTelemetryMetaParentJobId `json:"parentJobId,omitempty,omitzero" yaml:"parentJobId,omitempty" mapstructure:"parentJobId,omitempty"`
+
+	// Traceparent corresponds to the JSON schema field "traceparent".
+	Traceparent JobTelemetryMetaTraceparent `json:"traceparent,omitempty,omitzero" yaml:"traceparent,omitempty" mapstructure:"traceparent,omitempty"`
+
+	// Tracestate corresponds to the JSON schema field "tracestate".
+	Tracestate JobTelemetryMetaTracestate `json:"tracestate,omitempty,omitzero" yaml:"tracestate,omitempty" mapstructure:"tracestate,omitempty"`
+
+	// TriggerType corresponds to the JSON schema field "triggerType".
+	TriggerType JobTelemetryMetaTriggerType `json:"triggerType" yaml:"triggerType" mapstructure:"triggerType"`
+}
+
+type JobTelemetryMetaBaggage *string
+
+type JobTelemetryMetaParentJobId *string
+
+type JobTelemetryMetaTraceparent *string
+
+type JobTelemetryMetaTracestate *string
+
+type JobTelemetryMetaTriggerType string
+
+const JobTelemetryMetaTriggerTypeApi JobTelemetryMetaTriggerType = "api"
+const JobTelemetryMetaTriggerTypeHarvester JobTelemetryMetaTriggerType = "harvester"
+const JobTelemetryMetaTriggerTypeScheduler JobTelemetryMetaTriggerType = "scheduler"
+const JobTelemetryMetaTriggerTypeWorker JobTelemetryMetaTriggerType = "worker"
+
+var enumValues_JobTelemetryMetaTriggerType = []interface{}{
+	"api",
+	"scheduler",
+	"harvester",
+	"worker",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *JobTelemetryMetaTriggerType) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_JobTelemetryMetaTriggerType {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_JobTelemetryMetaTriggerType, v)
+	}
+	*j = JobTelemetryMetaTriggerType(v)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *JobTelemetryMeta) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["correlationId"]; raw != nil && !ok {
+		return fmt.Errorf("field correlationId in JobTelemetryMeta: required")
+	}
+	if _, ok := raw["enqueuedAt"]; raw != nil && !ok {
+		return fmt.Errorf("field enqueuedAt in JobTelemetryMeta: required")
+	}
+	if _, ok := raw["jobId"]; raw != nil && !ok {
+		return fmt.Errorf("field jobId in JobTelemetryMeta: required")
+	}
+	if _, ok := raw["triggerType"]; raw != nil && !ok {
+		return fmt.Errorf("field triggerType in JobTelemetryMeta: required")
+	}
+	type Plain JobTelemetryMeta
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = JobTelemetryMeta(plain)
+	return nil
+}
+
 // queue: memory_reflect（SPEC-006 §4；periodStart 含、periodEnd 不含）
 type MemoryReflectJob struct {
+	// Meta corresponds to the JSON schema field "_meta".
+	Meta *JobTelemetryMeta `json:"_meta,omitempty,omitzero" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
+
 	// PeriodEnd corresponds to the JSON schema field "periodEnd".
 	PeriodEnd time.Time `json:"periodEnd" yaml:"periodEnd" mapstructure:"periodEnd"`
 
@@ -1591,6 +1696,9 @@ func (j *SourceFetchConfig) UnmarshalJSON(value []byte) error {
 
 // queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）
 type SourceFetchJob struct {
+	// Meta corresponds to the JSON schema field "_meta".
+	Meta *JobTelemetryMeta `json:"_meta,omitempty,omitzero" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
+
 	// 手动投喂备注，供留痕使用
 	Note SourceFetchJobNote `json:"note,omitempty,omitzero" yaml:"note,omitempty" mapstructure:"note,omitempty"`
 
@@ -1928,6 +2036,9 @@ func (j *TopicDraft) UnmarshalJSON(value []byte) error {
 
 // queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
 type TopicEvaluateJob struct {
+	// Meta corresponds to the JSON schema field "_meta".
+	Meta *JobTelemetryMeta `json:"_meta,omitempty,omitzero" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
+
 	// 缺省用当前生效版本
 	RubricVersion *string `json:"rubricVersion,omitempty,omitzero" yaml:"rubricVersion,omitempty" mapstructure:"rubricVersion,omitempty"`
 
@@ -2086,6 +2197,9 @@ type TopicLatestScore *float64
 
 // queue: topic_scout（聚合 status=new 的素材为选题，SPEC-003 §4；rawItemIds 用于手动投喂定向处理）
 type TopicScoutJob struct {
+	// Meta corresponds to the JSON schema field "_meta".
+	Meta *JobTelemetryMeta `json:"_meta,omitempty,omitzero" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
+
 	// MaxTopics corresponds to the JSON schema field "maxTopics".
 	MaxTopics *int `json:"maxTopics,omitempty,omitzero" yaml:"maxTopics,omitempty" mapstructure:"maxTopics,omitempty"`
 

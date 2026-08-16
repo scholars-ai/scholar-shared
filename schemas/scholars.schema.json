@@ -284,12 +284,33 @@
       }
     },
 
+    "JobTelemetryMeta": {
+      "description": "跨队列传播的可选遥测元数据。旧消息可以不包含 _meta；Consumer 缺失时创建新的 root trace。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jobId", "correlationId", "enqueuedAt", "triggerType"],
+      "properties": {
+        "jobId": { "type": "string", "format": "uuid" },
+        "correlationId": { "type": "string", "format": "uuid" },
+        "parentJobId": { "type": ["string", "null"], "format": "uuid" },
+        "traceparent": { "type": ["string", "null"] },
+        "tracestate": { "type": ["string", "null"] },
+        "baggage": { "type": ["string", "null"] },
+        "enqueuedAt": { "type": "string", "format": "date-time" },
+        "triggerType": {
+          "type": "string",
+          "enum": ["api", "scheduler", "harvester", "worker"]
+        }
+      }
+    },
+
     "TopicEvaluateJob": {
       "description": "queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）",
       "type": "object",
       "additionalProperties": false,
       "required": ["topicId"],
       "properties": {
+        "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "topicId": { "type": "string", "format": "uuid" },
         "rubricVersion": { "description": "缺省用当前生效版本", "type": "string" }
       }
@@ -311,6 +332,7 @@
       "additionalProperties": false,
       "required": ["topicId", "platform"],
       "properties": {
+        "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "topicId": { "type": "string", "format": "uuid" },
         "platform": { "$ref": "#/definitions/Platform" },
         "rewrite": { "$ref": "#/definitions/RewriteContext" }
@@ -322,6 +344,7 @@
       "additionalProperties": false,
       "required": ["articleId"],
       "properties": {
+        "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "articleId": { "type": "string", "format": "uuid" },
         "rubricVersion": { "type": "string" }
       }
@@ -332,6 +355,7 @@
       "additionalProperties": false,
       "required": ["sourceId"],
       "properties": {
+        "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "sourceId": { "type": "string", "format": "uuid" },
         "url": { "description": "手动投喂时只抓取这一条 URL；普通 source_fetch 不传", "type": ["string", "null"], "format": "uri" },
         "note": { "description": "手动投喂备注，供留痕使用", "type": ["string", "null"] }
@@ -342,6 +366,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "maxTopics": { "type": "integer", "minimum": 1 },
         "rawItemIds": {
           "description": "仅处理指定的 new 素材；手动投喂链路使用",
@@ -357,6 +382,7 @@
       "additionalProperties": false,
       "required": ["periodStart", "periodEnd"],
       "properties": {
+        "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "periodStart": { "type": "string", "format": "date-time" },
         "periodEnd": { "type": "string", "format": "date-time" }
       }

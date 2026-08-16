@@ -1,0 +1,29 @@
+{
+  "name": "@scholars-ai/contracts",
+  "version": "0.2.0",
+  "description": "Generated TypeScript contracts for Scholars AI",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "contracts.d.ts",
+    "core-api.d.ts"
+  ],
+  "exports": {
+    "./contracts": {
+      "types": "./contracts.d.ts"
+    },
+    "./core-api": {
+      "types": "./core-api.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scholars-ai/scholar-shared.git",
+    "directory": "gen/ts"
+  }
+}

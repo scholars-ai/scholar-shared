@@ -371,6 +371,31 @@ class AgentRun(BaseModel):
     status: AgentRunStatus
 
 
+class TriggerType(StrEnum):
+    api = 'api'
+    scheduler = 'scheduler'
+    harvester = 'harvester'
+    worker = 'worker'
+
+
+class JobTelemetryMeta(BaseModel):
+    """
+    跨队列传播的可选遥测元数据。旧消息可以不包含 _meta；Consumer 缺失时创建新的 root trace。
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    jobId: UUID
+    correlationId: UUID
+    parentJobId: UUID | None = None
+    traceparent: str | None = None
+    tracestate: str | None = None
+    baggage: str | None = None
+    enqueuedAt: AwareDatetime
+    triggerType: TriggerType
+
+
 class TopicEvaluateJob(BaseModel):
     """
     queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
@@ -379,6 +404,7 @@ class TopicEvaluateJob(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     topicId: UUID
     rubricVersion: str | None = None
     """
@@ -410,6 +436,7 @@ class ArticleWriteJob(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     topicId: UUID
     platform: Platform
     rewrite: RewriteContext | None = None
@@ -423,6 +450,7 @@ class ArticleEvaluateJob(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     articleId: UUID
     rubricVersion: str | None = None
 
@@ -435,6 +463,7 @@ class SourceFetchJob(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     sourceId: UUID
     url: AnyUrl | None = None
     """
@@ -454,6 +483,7 @@ class TopicScoutJob(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     maxTopics: conint(ge=1) | None = None
     rawItemIds: list[UUID] | None = Field(None, min_length=1)
     """
@@ -469,6 +499,7 @@ class MemoryReflectJob(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     periodStart: AwareDatetime
     periodEnd: AwareDatetime
 

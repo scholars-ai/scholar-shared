@@ -27,7 +27,7 @@ scripts/validate.py            契约自检（schema 合法/权重归一/队列�
 
 - **Go（core）**：`require github.com/scholars-ai/scholar-shared/gen/go`
 - **Python（agents）**：以 git 子路径依赖引入 `gen/python/scholar_contracts`
-- **TS（client）**：引入 `gen/ts/*.d.ts`（类型 only）
+- **TS（client）**：当前同步 `gen/ts/*.d.ts` 并由跨仓库 CI 校验；`gen/ts/package.json` 定义 `@scholars-ai/contracts` 版本化类型包，发布流程确认后改为包依赖
 
 ## 约定
 
