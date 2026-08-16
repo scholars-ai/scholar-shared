@@ -308,6 +308,10 @@ class Publication(BaseModel):
     """
     人工发布前的修改 diff，衡量人工修改量指标
     """
+    editRatio: confloat(ge=0.0, le=1.0) | None
+    """
+    Core 按标题 + Markdown 正文的字符级编辑距离确定性计算，范围 0–1
+    """
     followerCountAtPublish: conint(ge=0) | None
     """
     发布时账号粉丝数，表现分基数修正用（SPEC-006 §3）

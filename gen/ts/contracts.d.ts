@@ -298,6 +298,10 @@ export interface Publication {
    */
   finalContentDiff: string | null;
   /**
+   * Core 按标题 + Markdown 正文的字符级编辑距离确定性计算，范围 0–1
+   */
+  editRatio: number | null;
+  /**
    * 发布时账号粉丝数，表现分基数修正用（SPEC-006 §3）
    */
   followerCountAtPublish: number | null;

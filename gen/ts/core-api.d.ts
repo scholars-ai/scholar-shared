@@ -107,6 +107,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/articles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 文章审阅列表（可按状态、平台、选题过滤） */
+        get: operations["listArticles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/articles/{articleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 文章详情（原稿、版本链、最新评分和发布记录） */
+        get: operations["getArticle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/articles/{articleId}/evaluations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 文章评分历史（倒序） */
+        get: operations["listArticleEvaluations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/articles/{articleId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 人工终审通过（pending_review → approved） */
+        post: operations["approveArticle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/articles/{articleId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 人工终审拒绝（pending_review → rejected） */
+        post: operations["rejectArticle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/articles/{articleId}/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 登记一次人工发布；首次登记同时执行 approved → published */
+        post: operations["createPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sources": {
         parameters: {
             query?: never;
@@ -251,6 +353,105 @@ export interface components {
         RejectTopicRequest: {
             /** @description 否决原因（留痕，供后续 rubric 校准参考） */
             reason?: string;
+        };
+        /** @enum {string} */
+        ArticleStatus: "draft" | "scored" | "rewrite_queued" | "pending_review" | "approved" | "published" | "rejected";
+        /** @enum {string} */
+        ArticleFormat: "markdown" | "html" | "rich_text";
+        Article: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            topicId: string;
+            platform: components["schemas"]["Platform"];
+            version: number;
+            /** Format: uuid */
+            previousArticleId: string | null;
+            format: components["schemas"]["ArticleFormat"];
+            title: string;
+            contentMd: string;
+            assets: {
+                [key: string]: unknown;
+            }[];
+            writerAgent: string;
+            status: components["schemas"]["ArticleStatus"];
+            latestScore: number | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ArticleEvaluation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            articleId: string;
+            rubricVersion: string;
+            weightVersion: number | null;
+            dimensionScores: {
+                [key: string]: number;
+            };
+            dimensionReasons: {
+                [key: string]: string;
+            };
+            totalScore: number;
+            rationale: string;
+            judgeModel: string;
+            vetoedDimension: string | null;
+            passThreshold: number;
+            passed: boolean;
+            /** Format: uuid */
+            agentRunId: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        Publication: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            articleId: string;
+            platform: components["schemas"]["Platform"];
+            platformPostId: string | null;
+            /** Format: date-time */
+            publishedAt: string;
+            finalContentDiff: string | null;
+            editRatio: number | null;
+            followerCountAtPublish: number | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ArticleReview: {
+            article: components["schemas"]["Article"];
+            topicTitle: string;
+            latestEvaluation?: components["schemas"]["ArticleEvaluation"];
+            publicationCount: number;
+        };
+        ArticleList: {
+            items: components["schemas"]["ArticleReview"][];
+            total: number;
+        };
+        ArticleDetail: {
+            article: components["schemas"]["Article"];
+            topic: components["schemas"]["Topic"];
+            versions: components["schemas"]["Article"][];
+            evaluations: components["schemas"]["ArticleEvaluation"][];
+            publications: components["schemas"]["Publication"][];
+        };
+        RejectArticleRequest: {
+            /** @description 终审拒绝原因 */
+            reason?: string;
+        };
+        CreatePublicationRequest: {
+            /** @description 平台侧 ID 或公开链接 */
+            platformPostId: string;
+            /**
+             * Format: date-time
+             * @description 未传时由 Core 使用当前时间
+             */
+            publishedAt?: string;
+            finalTitle: string;
+            finalContentMd: string;
+            followerCountAtPublish?: number | null;
         };
         TopicEvaluation: {
             /** Format: uuid */
@@ -409,6 +610,7 @@ export interface components {
     parameters: {
         TopicId: string;
         SourceId: string;
+        ArticleId: string;
     };
     requestBodies: never;
     headers: never;
@@ -582,6 +784,160 @@ export interface operations {
                     "application/json": components["schemas"]["Topic"];
                 };
             };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listArticles: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["ArticleStatus"];
+                platform?: components["schemas"]["Platform"];
+                topicId?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    getArticle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                articleId: components["parameters"]["ArticleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleDetail"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listArticleEvaluations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                articleId: components["parameters"]["ArticleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleEvaluation"][];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    approveArticle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                articleId: components["parameters"]["ArticleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Article"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    rejectArticle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                articleId: components["parameters"]["ArticleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RejectArticleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Article"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createPublication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                articleId: components["parameters"]["ArticleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePublicationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Publication"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
         };

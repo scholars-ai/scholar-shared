@@ -207,7 +207,7 @@
       "description": "发布记录（人工发布后登记）",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "articleId", "platform", "platformPostId", "publishedAt", "finalContentDiff", "followerCountAtPublish"],
+      "required": ["id", "articleId", "platform", "platformPostId", "publishedAt", "finalContentDiff", "editRatio", "followerCountAtPublish"],
       "properties": {
         "id": { "type": "string", "format": "uuid" },
         "articleId": { "type": "string", "format": "uuid" },
@@ -215,6 +215,7 @@
         "platformPostId": { "type": ["string", "null"] },
         "publishedAt": { "type": "string", "format": "date-time" },
         "finalContentDiff": { "description": "人工发布前的修改 diff，衡量人工修改量指标", "type": ["string", "null"] },
+        "editRatio": { "description": "Core 按标题 + Markdown 正文的字符级编辑距离确定性计算，范围 0–1", "type": ["number", "null"], "minimum": 0, "maximum": 1 },
         "followerCountAtPublish": { "description": "发布时账号粉丝数，表现分基数修正用（SPEC-006 §3）", "type": ["integer", "null"], "minimum": 0 }
       }
     },

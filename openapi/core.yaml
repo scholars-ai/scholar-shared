@@ -140,6 +140,135 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
+  /v1/articles:
+    get:
+      operationId: listArticles
+      summary: 文章审阅列表（可按状态、平台、选题过滤）
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ArticleStatus"
+        - name: platform
+          in: query
+          schema:
+            $ref: "#/components/schemas/Platform"
+        - name: topicId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/articles/{articleId}:
+    get:
+      operationId: getArticle
+      summary: 文章详情（原稿、版本链、最新评分和发布记录）
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/articles/{articleId}/evaluations:
+    get:
+      operationId: listArticleEvaluations
+      summary: 文章评分历史（倒序）
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArticleEvaluation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/articles/{articleId}/approve:
+    post:
+      operationId: approveArticle
+      summary: 人工终审通过（pending_review → approved）
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /v1/articles/{articleId}/reject:
+    post:
+      operationId: rejectArticle
+      summary: 人工终审拒绝（pending_review → rejected）
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectArticleRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /v1/articles/{articleId}/publications:
+    post:
+      operationId: createPublication
+      summary: 登记一次人工发布；首次登记同时执行 approved → published
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePublicationRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publication"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
   /v1/sources:
     get:
       operationId: listSources
@@ -317,6 +446,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    ArticleId:
+      name: articleId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   responses:
     BadRequest:
       description: 请求非法
@@ -394,6 +528,124 @@ components:
       type: object
       properties:
         reason: { type: string, description: 否决原因（留痕，供后续 rubric 校准参考） }
+
+    ArticleStatus:
+      type: string
+      enum: [draft, scored, rewrite_queued, pending_review, approved, published, rejected]
+    ArticleFormat:
+      type: string
+      enum: [markdown, html, rich_text]
+    Article:
+      type: object
+      required: [id, topicId, platform, version, previousArticleId, format, title, contentMd, assets, writerAgent, status, latestScore, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        topicId: { type: string, format: uuid }
+        platform:
+          $ref: "#/components/schemas/Platform"
+        version: { type: integer, minimum: 1 }
+        previousArticleId: { type: string, format: uuid, nullable: true }
+        format:
+          $ref: "#/components/schemas/ArticleFormat"
+        title: { type: string }
+        contentMd: { type: string }
+        assets:
+          type: array
+          items: { type: object, additionalProperties: true }
+        writerAgent: { type: string }
+        status:
+          $ref: "#/components/schemas/ArticleStatus"
+        latestScore: { type: number, nullable: true, minimum: 0, maximum: 100 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ArticleEvaluation:
+      type: object
+      required: [id, articleId, rubricVersion, weightVersion, dimensionScores, dimensionReasons, totalScore, rationale, judgeModel, vetoedDimension, passThreshold, passed, agentRunId, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        articleId: { type: string, format: uuid }
+        rubricVersion: { type: string }
+        weightVersion: { type: integer, nullable: true }
+        dimensionScores:
+          type: object
+          additionalProperties: { type: number, minimum: 0, maximum: 10 }
+        dimensionReasons:
+          type: object
+          additionalProperties: { type: string }
+        totalScore: { type: number, minimum: 0, maximum: 100 }
+        rationale: { type: string }
+        judgeModel: { type: string }
+        vetoedDimension: { type: string, nullable: true }
+        passThreshold: { type: number, minimum: 0, maximum: 100 }
+        passed: { type: boolean }
+        agentRunId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+    Publication:
+      type: object
+      required: [id, articleId, platform, platformPostId, publishedAt, finalContentDiff, editRatio, followerCountAtPublish, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        articleId: { type: string, format: uuid }
+        platform:
+          $ref: "#/components/schemas/Platform"
+        platformPostId: { type: string, nullable: true }
+        publishedAt: { type: string, format: date-time }
+        finalContentDiff: { type: string, nullable: true }
+        editRatio: { type: number, nullable: true, minimum: 0, maximum: 1 }
+        followerCountAtPublish: { type: integer, nullable: true, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+    ArticleReview:
+      type: object
+      required: [article, topicTitle, publicationCount]
+      properties:
+        article:
+          $ref: "#/components/schemas/Article"
+        topicTitle: { type: string }
+        latestEvaluation:
+          $ref: "#/components/schemas/ArticleEvaluation"
+        publicationCount: { type: integer, minimum: 0 }
+    ArticleList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArticleReview"
+        total: { type: integer, minimum: 0 }
+    ArticleDetail:
+      type: object
+      required: [article, topic, versions, evaluations, publications]
+      properties:
+        article:
+          $ref: "#/components/schemas/Article"
+        topic:
+          $ref: "#/components/schemas/Topic"
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Article"
+        evaluations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArticleEvaluation"
+        publications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Publication"
+    RejectArticleRequest:
+      type: object
+      properties:
+        reason: { type: string, description: 终审拒绝原因 }
+    CreatePublicationRequest:
+      type: object
+      required: [platformPostId, finalTitle, finalContentMd]
+      properties:
+        platformPostId: { type: string, minLength: 1, description: 平台侧 ID 或公开链接 }
+        publishedAt: { type: string, format: date-time, description: 未传时由 Core 使用当前时间 }
+        finalTitle: { type: string, minLength: 1 }
+        finalContentMd: { type: string, minLength: 1 }
+        followerCountAtPublish: { type: integer, nullable: true, minimum: 0 }
 
     TopicEvaluation:
       type: object

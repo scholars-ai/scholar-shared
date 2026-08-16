@@ -1326,6 +1326,9 @@ type Publication struct {
 	// ArticleId corresponds to the JSON schema field "articleId".
 	ArticleId string `json:"articleId" yaml:"articleId" mapstructure:"articleId"`
 
+	// Core 按标题 + Markdown 正文的字符级编辑距离确定性计算，范围 0–1
+	EditRatio PublicationEditRatio `json:"editRatio" yaml:"editRatio" mapstructure:"editRatio"`
+
 	// 人工发布前的修改 diff，衡量人工修改量指标
 	FinalContentDiff PublicationFinalContentDiff `json:"finalContentDiff" yaml:"finalContentDiff" mapstructure:"finalContentDiff"`
 
@@ -1345,6 +1348,9 @@ type Publication struct {
 	PublishedAt time.Time `json:"publishedAt" yaml:"publishedAt" mapstructure:"publishedAt"`
 }
 
+// Core 按标题 + Markdown 正文的字符级编辑距离确定性计算，范围 0–1
+type PublicationEditRatio *float64
+
 // 人工发布前的修改 diff，衡量人工修改量指标
 type PublicationFinalContentDiff *string
 
@@ -1361,6 +1367,9 @@ func (j *Publication) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["articleId"]; raw != nil && !ok {
 		return fmt.Errorf("field articleId in Publication: required")
+	}
+	if _, ok := raw["editRatio"]; raw != nil && !ok {
+		return fmt.Errorf("field editRatio in Publication: required")
 	}
 	if _, ok := raw["finalContentDiff"]; raw != nil && !ok {
 		return fmt.Errorf("field finalContentDiff in Publication: required")
