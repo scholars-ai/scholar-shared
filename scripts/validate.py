@@ -121,14 +121,20 @@ for out_def, rubric_path in JUDGE_OUTPUT_TO_RUBRIC.items():
 
 # 7. 调度设置：默认值必须自身合法（core 首次 seed 会用它）
 sched_defaults = {
-    "sourceFetch": {"enabled": True, "defaultIntervalMinutes": 60},
+    "sourceFetch": {"enabled": True, "defaultIntervalMinutes": 120},
     "topicScout": {
         "enabled": True,
-        "times": ["08:00", "20:00"],
+        "times": ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00"],
         "timezone": "Asia/Shanghai",
         "minNewItems": 5,
     },
     "topicEvaluate": {"enabled": True, "maxConcurrency": 2},
+    "articleWrite": {
+        "enabled": True,
+        "times": ["00:00", "08:00", "16:00"],
+        "timezone": "Asia/Shanghai",
+        "maxTopics": 3,
+    },
     "memoryReflect": {
         "enabled": True,
         "weekday": 1,

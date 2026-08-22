@@ -385,6 +385,63 @@ func (j *ArticleWriteJob) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// 平台文章生成调度：按每日固定时刻，自动选择最高分 scored Topic 并进入写作链路。
+type ArticleWriteSchedule struct {
+	// Enabled corresponds to the JSON schema field "enabled".
+	Enabled bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+
+	// 单次自动进入写作链路的最高分 Topic 数量
+	MaxTopics int `json:"maxTopics" yaml:"maxTopics" mapstructure:"maxTopics"`
+
+	// 每日执行时刻（HH:MM，24 小时制）
+	Times []string `json:"times" yaml:"times" mapstructure:"times"`
+
+	// IANA 时区名，如 Asia/Shanghai
+	Timezone string `json:"timezone" yaml:"timezone" mapstructure:"timezone"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ArticleWriteSchedule) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["enabled"]; raw != nil && !ok {
+		return fmt.Errorf("field enabled in ArticleWriteSchedule: required")
+	}
+	if _, ok := raw["maxTopics"]; raw != nil && !ok {
+		return fmt.Errorf("field maxTopics in ArticleWriteSchedule: required")
+	}
+	if _, ok := raw["times"]; raw != nil && !ok {
+		return fmt.Errorf("field times in ArticleWriteSchedule: required")
+	}
+	if _, ok := raw["timezone"]; raw != nil && !ok {
+		return fmt.Errorf("field timezone in ArticleWriteSchedule: required")
+	}
+	type Plain ArticleWriteSchedule
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 20 < plain.MaxTopics {
+		return fmt.Errorf("field %s: must be <= %v", "maxTopics", 20)
+	}
+	if 1 > plain.MaxTopics {
+		return fmt.Errorf("field %s: must be >= %v", "maxTopics", 1)
+	}
+	if plain.Times != nil && len(plain.Times) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "times", 1)
+	}
+	if len(plain.Times) > 24 {
+		return fmt.Errorf("field %s length: must be <= %d", "times", 24)
+	}
+	if utf8.RuneCountInString(string(plain.Timezone)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "timezone", 1)
+	}
+	*j = ArticleWriteSchedule(plain)
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Article) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -1996,6 +2053,9 @@ func (j *RubricDimension) UnmarshalJSON(value []byte) error {
 
 // 全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。
 type SchedulerSettings struct {
+	// ArticleWrite corresponds to the JSON schema field "articleWrite".
+	ArticleWrite ArticleWriteSchedule `json:"articleWrite" yaml:"articleWrite" mapstructure:"articleWrite"`
+
 	// MemoryReflect corresponds to the JSON schema field "memoryReflect".
 	MemoryReflect MemoryReflectSchedule `json:"memoryReflect" yaml:"memoryReflect" mapstructure:"memoryReflect"`
 
@@ -2014,6 +2074,9 @@ func (j *SchedulerSettings) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
+	}
+	if _, ok := raw["articleWrite"]; raw != nil && !ok {
+		return fmt.Errorf("field articleWrite in SchedulerSettings: required")
 	}
 	if _, ok := raw["memoryReflect"]; raw != nil && !ok {
 		return fmt.Errorf("field memoryReflect in SchedulerSettings: required")

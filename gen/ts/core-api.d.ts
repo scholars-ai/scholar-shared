@@ -21,6 +21,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pipeline/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 固定节奏内容流水线总览 */
+        get: operations["getPipelineSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pipeline/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 最近的固定节奏调度运行 */
+        get: operations["listPipelineRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/topics": {
         parameters: {
             query?: never;
@@ -452,10 +486,213 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workflow/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询工作流运行记录 */
+        get: operations["listWorkflowRuns"];
+        put?: never;
+        /** 手动触发一次内容流水线 */
+        post: operations["createWorkflowRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflow/runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询一次工作流运行 */
+        get: operations["getWorkflowRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflow/runs/{runId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询工作流事件 */
+        get: operations["listWorkflowEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflow/runs/{runId}/artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询工作流产物 */
+        get: operations["listWorkflowArtifacts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflow/runs/{runId}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 订阅工作流事件 */
+        get: operations["streamWorkflowRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        PipelineStageSummary: {
+            /** @enum {string} */
+            key: "source_fetch" | "topic_scout" | "article_write";
+            label: string;
+            cadenceMinutes: number;
+            total: number;
+            ready: number;
+            passed: number;
+            failed: number;
+            rewrites: number;
+            /** Format: date-time */
+            lastRunAt: string | null;
+            /** Format: date-time */
+            nextRunAt: string | null;
+        };
+        PipelineError: {
+            /** Format: uuid */
+            id: string;
+            queue: string;
+            errorType: string;
+            message: string;
+            retryable: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PipelineSummary: {
+            /** Format: date-time */
+            generatedAt: string;
+            stages: components["schemas"]["PipelineStageSummary"][];
+            recentErrors: components["schemas"]["PipelineError"][];
+        };
+        PipelineRun: {
+            /** Format: uuid */
+            id: string;
+            scheduleKey: string;
+            /** Format: date-time */
+            plannedAt: string;
+            /** Format: date-time */
+            enqueuedAt: string;
+            queue: string;
+            /** Format: int64 */
+            msgId: number | null;
+            note: string | null;
+        };
+        PipelineRunList: {
+            items: components["schemas"]["PipelineRun"][];
+        };
+        WorkflowRun: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            correlationId: string;
+            /** @enum {string} */
+            mode: "cascade";
+            /** @enum {string} */
+            startNode: "source_fetch";
+            /** @enum {string} */
+            status: "queued" | "running" | "succeeded" | "failed";
+            errorMessage?: string | null;
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            startedAt?: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+        };
+        CreateWorkflowRunRequest: {
+            sourceIds?: string[];
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        WorkflowRunList: {
+            items: components["schemas"]["WorkflowRun"][];
+        };
+        WorkflowRunDetail: components["schemas"]["WorkflowRun"] & {
+            events: components["schemas"]["WorkflowEvent"][];
+            artifacts: components["schemas"]["WorkflowArtifact"][];
+        };
+        WorkflowEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            runId: string;
+            /** Format: int64 */
+            sequence: number;
+            nodeKey: string;
+            eventType: string;
+            status: string;
+            message: string;
+            /** Format: uuid */
+            agentRunId?: string | null;
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+        };
+        WorkflowArtifact: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            runId: string;
+            nodeKey: string;
+            artifactType: string;
+            /** Format: uuid */
+            artifactId: string;
+            title: string;
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            createdAt: string;
+        };
         Health: {
             /** @enum {string} */
             status: "ok";
@@ -855,6 +1092,12 @@ export interface components {
             enabled: boolean;
             maxConcurrency: number;
         };
+        ArticleWriteSchedule: {
+            enabled: boolean;
+            times: string[];
+            timezone: string;
+            maxTopics: number;
+        };
         MemoryReflectSchedule: {
             enabled: boolean;
             weekday: number;
@@ -866,6 +1109,7 @@ export interface components {
             sourceFetch: components["schemas"]["SourceFetchSchedule"];
             topicScout: components["schemas"]["TopicScoutSchedule"];
             topicEvaluate: components["schemas"]["TopicEvaluateSchedule"];
+            articleWrite: components["schemas"]["ArticleWriteSchedule"];
             memoryReflect: components["schemas"]["MemoryReflectSchedule"];
         };
         /** @description 仅传需要改的分组 */
@@ -873,6 +1117,7 @@ export interface components {
             sourceFetch?: components["schemas"]["SourceFetchSchedule"];
             topicScout?: components["schemas"]["TopicScoutSchedule"];
             topicEvaluate?: components["schemas"]["TopicEvaluateSchedule"];
+            articleWrite?: components["schemas"]["ArticleWriteSchedule"];
             memoryReflect?: components["schemas"]["MemoryReflectSchedule"];
         };
     };
@@ -934,6 +1179,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    getPipelineSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PipelineSummary"];
+                };
+            };
+        };
+    };
+    listPipelineRuns: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PipelineRunList"];
                 };
             };
         };
@@ -1704,6 +1991,147 @@ export interface operations {
                 };
             };
             409: components["responses"]["Conflict"];
+        };
+    };
+    listWorkflowRuns: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowRunList"];
+                };
+            };
+        };
+    };
+    createWorkflowRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkflowRunRequest"];
+            };
+        };
+        responses: {
+            /** @description 已创建并入队 */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowRun"];
+                };
+            };
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getWorkflowRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowRunDetail"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listWorkflowEvents: {
+        parameters: {
+            query?: {
+                after?: number;
+            };
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowEvent"][];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listWorkflowArtifacts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowArtifact"][];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    streamWorkflowRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server-sent events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
 }

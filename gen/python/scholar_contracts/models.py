@@ -668,6 +668,29 @@ class TopicEvaluateSchedule(BaseModel):
     maxConcurrency: conint(ge=1, le=32)
 
 
+class ArticleWriteSchedule(BaseModel):
+    """
+    平台文章生成调度：按每日固定时刻，自动选择最高分 scored Topic 并进入写作链路。
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    enabled: bool
+    times: list[Time] = Field(..., max_length=24, min_length=1)
+    """
+    每日执行时刻（HH:MM，24 小时制）
+    """
+    timezone: constr(min_length=1)
+    """
+    IANA 时区名，如 Asia/Shanghai
+    """
+    maxTopics: conint(ge=1, le=20)
+    """
+    单次自动进入写作链路的最高分 Topic 数量
+    """
+
+
 class MemoryReflectSchedule(BaseModel):
     """
     每周反思调度；weekday 使用 ISO 周序号 1=周一…7=周日
@@ -884,6 +907,7 @@ class SchedulerSettings(BaseModel):
     sourceFetch: SourceFetchSchedule
     topicScout: TopicScoutSchedule
     topicEvaluate: TopicEvaluateSchedule
+    articleWrite: ArticleWriteSchedule
     memoryReflect: MemoryReflectSchedule
 
 

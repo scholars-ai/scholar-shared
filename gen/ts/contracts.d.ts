@@ -572,6 +572,7 @@ export interface SchedulerSettings {
   sourceFetch: SourceFetchSchedule;
   topicScout: TopicScoutSchedule;
   topicEvaluate: TopicEvaluateSchedule;
+  articleWrite: ArticleWriteSchedule;
   memoryReflect: MemoryReflectSchedule;
 }
 /**
@@ -620,6 +621,30 @@ export interface TopicScoutSchedule {
 export interface TopicEvaluateSchedule {
   enabled: boolean;
   maxConcurrency: number;
+}
+/**
+ * 平台文章生成调度：按每日固定时刻，自动选择最高分 scored Topic 并进入写作链路。
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "ArticleWriteSchedule".
+ */
+export interface ArticleWriteSchedule {
+  enabled: boolean;
+  /**
+   * 每日执行时刻（HH:MM，24 小时制）
+   *
+   * @minItems 1
+   * @maxItems 24
+   */
+  times: [string, ...string[]];
+  /**
+   * IANA 时区名，如 Asia/Shanghai
+   */
+  timezone: string;
+  /**
+   * 单次自动进入写作链路的最高分 Topic 数量
+   */
+  maxTopics: number;
 }
 /**
  * 每周反思调度；weekday 使用 ISO 周序号 1=周一…7=周日

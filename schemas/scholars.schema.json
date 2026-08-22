@@ -462,11 +462,12 @@
       "description": "全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。",
       "type": "object",
       "additionalProperties": false,
-      "required": ["sourceFetch", "topicScout", "topicEvaluate", "memoryReflect"],
+      "required": ["sourceFetch", "topicScout", "topicEvaluate", "articleWrite", "memoryReflect"],
       "properties": {
         "sourceFetch": { "$ref": "#/definitions/SourceFetchSchedule" },
         "topicScout": { "$ref": "#/definitions/TopicScoutSchedule" },
         "topicEvaluate": { "$ref": "#/definitions/TopicEvaluateSchedule" },
+        "articleWrite": { "$ref": "#/definitions/ArticleWriteSchedule" },
         "memoryReflect": { "$ref": "#/definitions/MemoryReflectSchedule" }
       }
     },
@@ -506,6 +507,24 @@
       "properties": {
         "enabled": { "type": "boolean" },
         "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 32 }
+      }
+    },
+    "ArticleWriteSchedule": {
+      "description": "平台文章生成调度：按每日固定时刻，自动选择最高分 scored Topic 并进入写作链路。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "times", "timezone", "maxTopics"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "times": {
+          "description": "每日执行时刻（HH:MM，24 小时制）",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+        },
+        "timezone": { "description": "IANA 时区名，如 Asia/Shanghai", "type": "string", "minLength": 1 },
+        "maxTopics": { "description": "单次自动进入写作链路的最高分 Topic 数量", "type": "integer", "minimum": 1, "maximum": 20 }
       }
     },
     "MemoryReflectSchedule": {
