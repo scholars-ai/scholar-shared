@@ -284,6 +284,41 @@ class WorkflowSnapshot(BaseModel):
     createdAt: AwareDatetime
 
 
+class Status(StrEnum):
+    validated = 'validated'
+
+
+class ResolvedBy(StrEnum):
+    core = 'core'
+
+
+class Resolution(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    status: Status
+    resolvedBy: ResolvedBy
+    agentOwned: list[str]
+
+
+class WorkflowConfigSnapshot(BaseModel):
+    """
+    配置快照 payload；由 Core 固化并由 replay 继承。
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    schemaVersion: conint(ge=1)
+    configVersion: constr(min_length=1)
+    workflowVersion: constr(min_length=1)
+    triggerType: WorkflowTriggerType
+    overrides: dict[str, Any]
+    requestedOverrides: dict[str, Any]
+    effective: dict[str, Any]
+    resolution: Resolution
+
+
 class SourceRole(StrEnum):
     """
     material=能拿到原文，可作写作素材；signal=只有二手摘要，仅供发现（SPEC-003 §2.1）

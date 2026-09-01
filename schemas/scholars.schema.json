@@ -175,6 +175,31 @@
         "createdAt": { "type": "string", "format": "date-time" }
       }
     },
+    "WorkflowConfigSnapshot": {
+      "description": "配置快照 payload；由 Core 固化并由 replay 继承。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "configVersion", "workflowVersion", "triggerType", "overrides", "requestedOverrides", "effective", "resolution"],
+      "properties": {
+        "schemaVersion": { "type": "integer", "minimum": 1 },
+        "configVersion": { "type": "string", "minLength": 1 },
+        "workflowVersion": { "type": "string", "minLength": 1 },
+        "triggerType": { "$ref": "#/definitions/WorkflowTriggerType" },
+        "overrides": { "type": "object", "additionalProperties": true },
+        "requestedOverrides": { "type": "object", "additionalProperties": true },
+        "effective": { "type": "object", "additionalProperties": true },
+        "resolution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "resolvedBy", "agentOwned"],
+          "properties": {
+            "status": { "type": "string", "enum": ["validated"] },
+            "resolvedBy": { "type": "string", "enum": ["core"] },
+            "agentOwned": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
 
     "Source": {
       "description": "信源（SPEC-003 §2）",

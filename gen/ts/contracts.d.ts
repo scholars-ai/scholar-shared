@@ -280,6 +280,32 @@ export interface WorkflowSnapshot {
   createdAt: string;
 }
 /**
+ * 配置快照 payload；由 Core 固化并由 replay 继承。
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowConfigSnapshot".
+ */
+export interface WorkflowConfigSnapshot {
+  schemaVersion: number;
+  configVersion: string;
+  workflowVersion: string;
+  triggerType: WorkflowTriggerType;
+  overrides: {
+    [k: string]: unknown;
+  };
+  requestedOverrides: {
+    [k: string]: unknown;
+  };
+  effective: {
+    [k: string]: unknown;
+  };
+  resolution: {
+    status: "validated";
+    resolvedBy: "core";
+    agentOwned: string[];
+  };
+}
+/**
  * 信源（SPEC-003 §2）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema

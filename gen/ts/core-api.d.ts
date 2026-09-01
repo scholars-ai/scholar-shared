@@ -848,6 +848,29 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /** @description 配置快照 payload；由 Core 固化并由 replay 继承。 */
+        WorkflowConfigSnapshot: {
+            schemaVersion: number;
+            configVersion: string;
+            workflowVersion: string;
+            triggerType: components["schemas"]["WorkflowTriggerType"];
+            overrides: {
+                [key: string]: unknown;
+            };
+            requestedOverrides: {
+                [key: string]: unknown;
+            };
+            effective: {
+                [key: string]: unknown;
+            };
+            resolution: {
+                /** @enum {string} */
+                status: "validated";
+                /** @enum {string} */
+                resolvedBy: "core";
+                agentOwned: string[];
+            };
+        };
         /** @enum {string} */
         WorkflowDecision: "accepted" | "rejected" | "skipped" | "failed";
         /** @enum {string} */

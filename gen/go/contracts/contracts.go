@@ -3362,6 +3362,178 @@ func (j *WorkflowConfigOverrides) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// 配置快照 payload；由 Core 固化并由 replay 继承。
+type WorkflowConfigSnapshot struct {
+	// ConfigVersion corresponds to the JSON schema field "configVersion".
+	ConfigVersion string `json:"configVersion" yaml:"configVersion" mapstructure:"configVersion"`
+
+	// Effective corresponds to the JSON schema field "effective".
+	Effective WorkflowConfigSnapshotEffective `json:"effective" yaml:"effective" mapstructure:"effective"`
+
+	// Overrides corresponds to the JSON schema field "overrides".
+	Overrides WorkflowConfigSnapshotOverrides `json:"overrides" yaml:"overrides" mapstructure:"overrides"`
+
+	// RequestedOverrides corresponds to the JSON schema field "requestedOverrides".
+	RequestedOverrides WorkflowConfigSnapshotRequestedOverrides `json:"requestedOverrides" yaml:"requestedOverrides" mapstructure:"requestedOverrides"`
+
+	// Resolution corresponds to the JSON schema field "resolution".
+	Resolution WorkflowConfigSnapshotResolution `json:"resolution" yaml:"resolution" mapstructure:"resolution"`
+
+	// SchemaVersion corresponds to the JSON schema field "schemaVersion".
+	SchemaVersion int `json:"schemaVersion" yaml:"schemaVersion" mapstructure:"schemaVersion"`
+
+	// TriggerType corresponds to the JSON schema field "triggerType".
+	TriggerType WorkflowTriggerType `json:"triggerType" yaml:"triggerType" mapstructure:"triggerType"`
+
+	// WorkflowVersion corresponds to the JSON schema field "workflowVersion".
+	WorkflowVersion string `json:"workflowVersion" yaml:"workflowVersion" mapstructure:"workflowVersion"`
+}
+
+type WorkflowConfigSnapshotEffective map[string]interface{}
+
+type WorkflowConfigSnapshotOverrides map[string]interface{}
+
+type WorkflowConfigSnapshotRequestedOverrides map[string]interface{}
+
+type WorkflowConfigSnapshotResolution struct {
+	// AgentOwned corresponds to the JSON schema field "agentOwned".
+	AgentOwned []string `json:"agentOwned" yaml:"agentOwned" mapstructure:"agentOwned"`
+
+	// ResolvedBy corresponds to the JSON schema field "resolvedBy".
+	ResolvedBy WorkflowConfigSnapshotResolutionResolvedBy `json:"resolvedBy" yaml:"resolvedBy" mapstructure:"resolvedBy"`
+
+	// Status corresponds to the JSON schema field "status".
+	Status WorkflowConfigSnapshotResolutionStatus `json:"status" yaml:"status" mapstructure:"status"`
+}
+
+type WorkflowConfigSnapshotResolutionResolvedBy string
+
+const WorkflowConfigSnapshotResolutionResolvedByCore WorkflowConfigSnapshotResolutionResolvedBy = "core"
+
+var enumValues_WorkflowConfigSnapshotResolutionResolvedBy = []interface{}{
+	"core",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowConfigSnapshotResolutionResolvedBy) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_WorkflowConfigSnapshotResolutionResolvedBy {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_WorkflowConfigSnapshotResolutionResolvedBy, v)
+	}
+	*j = WorkflowConfigSnapshotResolutionResolvedBy(v)
+	return nil
+}
+
+type WorkflowConfigSnapshotResolutionStatus string
+
+const WorkflowConfigSnapshotResolutionStatusValidated WorkflowConfigSnapshotResolutionStatus = "validated"
+
+var enumValues_WorkflowConfigSnapshotResolutionStatus = []interface{}{
+	"validated",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowConfigSnapshotResolutionStatus) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_WorkflowConfigSnapshotResolutionStatus {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_WorkflowConfigSnapshotResolutionStatus, v)
+	}
+	*j = WorkflowConfigSnapshotResolutionStatus(v)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowConfigSnapshotResolution) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["agentOwned"]; raw != nil && !ok {
+		return fmt.Errorf("field agentOwned in WorkflowConfigSnapshotResolution: required")
+	}
+	if _, ok := raw["resolvedBy"]; raw != nil && !ok {
+		return fmt.Errorf("field resolvedBy in WorkflowConfigSnapshotResolution: required")
+	}
+	if _, ok := raw["status"]; raw != nil && !ok {
+		return fmt.Errorf("field status in WorkflowConfigSnapshotResolution: required")
+	}
+	type Plain WorkflowConfigSnapshotResolution
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = WorkflowConfigSnapshotResolution(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowConfigSnapshot) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["configVersion"]; raw != nil && !ok {
+		return fmt.Errorf("field configVersion in WorkflowConfigSnapshot: required")
+	}
+	if _, ok := raw["effective"]; raw != nil && !ok {
+		return fmt.Errorf("field effective in WorkflowConfigSnapshot: required")
+	}
+	if _, ok := raw["overrides"]; raw != nil && !ok {
+		return fmt.Errorf("field overrides in WorkflowConfigSnapshot: required")
+	}
+	if _, ok := raw["requestedOverrides"]; raw != nil && !ok {
+		return fmt.Errorf("field requestedOverrides in WorkflowConfigSnapshot: required")
+	}
+	if _, ok := raw["resolution"]; raw != nil && !ok {
+		return fmt.Errorf("field resolution in WorkflowConfigSnapshot: required")
+	}
+	if _, ok := raw["schemaVersion"]; raw != nil && !ok {
+		return fmt.Errorf("field schemaVersion in WorkflowConfigSnapshot: required")
+	}
+	if _, ok := raw["triggerType"]; raw != nil && !ok {
+		return fmt.Errorf("field triggerType in WorkflowConfigSnapshot: required")
+	}
+	if _, ok := raw["workflowVersion"]; raw != nil && !ok {
+		return fmt.Errorf("field workflowVersion in WorkflowConfigSnapshot: required")
+	}
+	type Plain WorkflowConfigSnapshot
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain.ConfigVersion)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "configVersion", 1)
+	}
+	if 1 > plain.SchemaVersion {
+		return fmt.Errorf("field %s: must be >= %v", "schemaVersion", 1)
+	}
+	if utf8.RuneCountInString(string(plain.WorkflowVersion)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "workflowVersion", 1)
+	}
+	*j = WorkflowConfigSnapshot(plain)
+	return nil
+}
+
 type WorkflowDecision string
 
 const WorkflowDecisionAccepted WorkflowDecision = "accepted"
