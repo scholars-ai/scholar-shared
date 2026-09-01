@@ -572,6 +572,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workflow/runs/{runId}/nodes/{nodeKey}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询节点逐条判定 */
+        get: operations["listWorkflowNodeDecisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflow/runs/{runId}/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 从指定节点创建不可变 replay 子运行 */
+        post: operations["replayWorkflowRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workflow/runs/{runId}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 比较父运行与 replay 运行 */
+        post: operations["compareWorkflowRuns"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -628,12 +679,23 @@ export interface components {
             id: string;
             /** Format: uuid */
             correlationId: string;
-            /** @enum {string} */
-            mode: "cascade";
-            /** @enum {string} */
-            startNode: "source_fetch";
-            /** @enum {string} */
-            status: "queued" | "running" | "succeeded" | "failed";
+            mode: components["schemas"]["WorkflowRunMode"];
+            triggerType: components["schemas"]["WorkflowTriggerType"];
+            startNode: components["schemas"]["WorkflowNodeKey"];
+            status: components["schemas"]["WorkflowRunStatus"];
+            /** Format: uuid */
+            parentRunId?: string | null;
+            replayFromNode?: components["schemas"]["WorkflowNodeKey"];
+            replayScope?: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: uuid */
+            inputSnapshotId?: string | null;
+            /** Format: uuid */
+            configSnapshotId?: string | null;
+            summary?: {
+                [key: string]: unknown;
+            };
             errorMessage?: string | null;
             metadata?: {
                 [key: string]: unknown;
@@ -657,6 +719,8 @@ export interface components {
         WorkflowRunDetail: components["schemas"]["WorkflowRun"] & {
             events: components["schemas"]["WorkflowEvent"][];
             artifacts: components["schemas"]["WorkflowArtifact"][];
+            nodeRuns: components["schemas"]["WorkflowNodeRun"][];
+            decisions: components["schemas"]["WorkflowItemDecision"][];
         };
         WorkflowEvent: {
             /** Format: uuid */
@@ -677,6 +741,62 @@ export interface components {
             /** Format: date-time */
             occurredAt: string;
         };
+        WorkflowNodeRun: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            runId: string;
+            nodeKey: components["schemas"]["WorkflowNodeKey"];
+            status: components["schemas"]["WorkflowNodeStatus"];
+            /** Format: uuid */
+            inputSnapshotId?: string | null;
+            /** Format: uuid */
+            outputSnapshotId?: string | null;
+            configSnapshot: {
+                [key: string]: unknown;
+            };
+            counts: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            startedAt?: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+        };
+        WorkflowItemDecision: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            runId: string;
+            /** Format: uuid */
+            nodeRunId: string;
+            /** Format: uuid */
+            itemId: string;
+            itemType: components["schemas"]["WorkflowItemType"];
+            decision: components["schemas"]["WorkflowDecision"];
+            reasonCode: string;
+            reason: string;
+            dimensionScores?: {
+                [key: string]: number;
+            } | null;
+            totalScore?: number | null;
+            threshold?: number | null;
+            weightVersion?: number | null;
+            rubricVersion?: string | null;
+            inputRefs: {
+                [key: string]: unknown;
+            };
+            evidenceRefs: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            agentRunId?: string | null;
+            traceId?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
         WorkflowArtifact: {
             /** Format: uuid */
             id: string;
@@ -692,6 +812,47 @@ export interface components {
             };
             /** Format: date-time */
             createdAt: string;
+        };
+        /** @enum {string} */
+        WorkflowDecision: "accepted" | "rejected" | "skipped" | "failed";
+        /** @enum {string} */
+        WorkflowItemType: "raw_item" | "topic" | "article";
+        /** @enum {string} */
+        WorkflowRunMode: "content_production";
+        /** @enum {string} */
+        WorkflowRunStatus: "queued" | "running" | "waiting_human_review" | "completed" | "completed_empty" | "partial_failed" | "failed" | "cancelled";
+        /** @enum {string} */
+        WorkflowNodeKey: "source_fetch" | "topic_scout" | "topic_evaluate" | "article_write" | "article_evaluate" | "human_review";
+        /** @enum {string} */
+        WorkflowNodeStatus: "queued" | "running" | "succeeded" | "partial_failed" | "failed" | "skipped" | "cancelled";
+        /** @enum {string} */
+        WorkflowTriggerType: "scheduled" | "manual" | "replay";
+        ReplayWorkflowRequest: {
+            replayFromNode: components["schemas"]["WorkflowNodeKey"];
+            /** @description full, failed_items, selected_items 或 evaluate_only 等范围 */
+            replayScope: {
+                [key: string]: unknown;
+            };
+            configOverrides?: {
+                [key: string]: unknown;
+            };
+            reason?: string;
+        };
+        WorkflowRunComparison: {
+            /** Format: uuid */
+            baseRunId: string;
+            /** Format: uuid */
+            otherRunId: string;
+            sameInput: boolean;
+            stages: {
+                [key: string]: unknown;
+            };
+            reasonCounts: {
+                [key: string]: unknown;
+            };
+            cost?: {
+                [key: string]: unknown;
+            };
         };
         Health: {
             /** @enum {string} */
@@ -1106,14 +1267,20 @@ export interface components {
             lookbackDays: number;
         };
         SchedulerSettings: {
+            contentWorkflow: components["schemas"]["ContentWorkflowSchedule"];
             sourceFetch: components["schemas"]["SourceFetchSchedule"];
             topicScout: components["schemas"]["TopicScoutSchedule"];
             topicEvaluate: components["schemas"]["TopicEvaluateSchedule"];
             articleWrite: components["schemas"]["ArticleWriteSchedule"];
             memoryReflect: components["schemas"]["MemoryReflectSchedule"];
         };
+        ContentWorkflowSchedule: {
+            enabled: boolean;
+            intervalHours: number;
+        };
         /** @description 仅传需要改的分组 */
         SchedulerSettingsPatch: {
+            contentWorkflow?: components["schemas"]["ContentWorkflowSchedule"];
             sourceFetch?: components["schemas"]["SourceFetchSchedule"];
             topicScout?: components["schemas"]["TopicScoutSchedule"];
             topicEvaluate?: components["schemas"]["TopicEvaluateSchedule"];
@@ -2129,6 +2296,91 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listWorkflowNodeDecisions: {
+        parameters: {
+            query?: {
+                decision?: components["schemas"]["WorkflowDecision"];
+            };
+            header?: never;
+            path: {
+                runId: string;
+                nodeKey: components["schemas"]["WorkflowNodeKey"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowItemDecision"][];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    replayWorkflowRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplayWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description replay 已创建 */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    compareWorkflowRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    otherRunId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowRunComparison"];
                 };
             };
             404: components["responses"]["NotFound"];

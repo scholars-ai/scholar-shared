@@ -121,6 +121,7 @@ for out_def, rubric_path in JUDGE_OUTPUT_TO_RUBRIC.items():
 
 # 7. 调度设置：默认值必须自身合法（core 首次 seed 会用它）
 sched_defaults = {
+    "contentWorkflow": {"enabled": True, "intervalHours": 12},
     "sourceFetch": {"enabled": True, "defaultIntervalMinutes": 120},
     "topicScout": {
         "enabled": True,

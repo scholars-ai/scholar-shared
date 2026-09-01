@@ -60,6 +60,121 @@
       "type": "string",
       "enum": ["running", "succeeded", "failed"]
     },
+    "WorkflowRunStatus": {
+      "description": "一次完整内容生产运行的状态（SPEC-010 §3.3）",
+      "type": "string",
+      "enum": ["queued", "running", "waiting_human_review", "completed", "completed_empty", "partial_failed", "failed", "cancelled"]
+    },
+    "WorkflowNodeKey": {
+      "type": "string",
+      "enum": ["source_fetch", "topic_scout", "topic_evaluate", "article_write", "article_evaluate", "human_review"]
+    },
+    "WorkflowNodeStatus": {
+      "type": "string",
+      "enum": ["queued", "running", "succeeded", "partial_failed", "failed", "skipped", "cancelled"]
+    },
+    "WorkflowTriggerType": {
+      "type": "string",
+      "enum": ["scheduled", "manual", "replay"]
+    },
+    "WorkflowDecision": {
+      "type": "string",
+      "enum": ["accepted", "rejected", "skipped", "failed"]
+    },
+    "WorkflowItemType": {
+      "type": "string",
+      "enum": ["raw_item", "topic", "article"]
+    },
+    "WorkflowRunMode": {
+      "type": "string",
+      "enum": ["content_production"]
+    },
+    "WorkflowRunSummary": {
+      "description": "动态漏斗聚合；数字是本次运行观测值，不是业务配额",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "accepted": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "output": { "type": "integer", "minimum": 0 },
+        "reasonCounts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    "WorkflowNodeRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "runId", "nodeKey", "status", "inputSnapshotId", "outputSnapshotId", "configSnapshot", "counts", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "runId": { "type": "string", "format": "uuid" },
+        "nodeKey": { "$ref": "#/definitions/WorkflowNodeKey" },
+        "status": { "$ref": "#/definitions/WorkflowNodeStatus" },
+        "inputSnapshotId": { "type": ["string", "null"], "format": "uuid" },
+        "outputSnapshotId": { "type": ["string", "null"], "format": "uuid" },
+        "configSnapshot": { "type": "object", "additionalProperties": true },
+        "counts": { "$ref": "#/definitions/WorkflowRunSummary" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "startedAt": { "type": ["string", "null"], "format": "date-time" },
+        "completedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "WorkflowItemDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "runId", "nodeRunId", "itemId", "itemType", "decision", "reasonCode", "reason", "inputRefs", "evidenceRefs", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "runId": { "type": "string", "format": "uuid" },
+        "nodeRunId": { "type": "string", "format": "uuid" },
+        "itemId": { "type": "string", "format": "uuid" },
+        "itemType": { "$ref": "#/definitions/WorkflowItemType" },
+        "decision": { "$ref": "#/definitions/WorkflowDecision" },
+        "reasonCode": { "type": "string" },
+        "reason": { "type": "string" },
+        "dimensionScores": { "type": ["object", "null"], "additionalProperties": { "type": "number" } },
+        "totalScore": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "threshold": { "type": ["number", "null"] },
+        "weightVersion": { "type": ["integer", "null"], "minimum": 1 },
+        "rubricVersion": { "type": ["string", "null"] },
+        "inputRefs": { "type": "object", "additionalProperties": true },
+        "evidenceRefs": { "type": "object", "additionalProperties": true },
+        "agentRunId": { "type": ["string", "null"], "format": "uuid" },
+        "traceId": { "type": ["string", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "WorkflowArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "runId", "nodeKey", "artifactType", "artifactId", "title", "metadata", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "runId": { "type": "string", "format": "uuid" },
+        "nodeKey": { "$ref": "#/definitions/WorkflowNodeKey" },
+        "artifactType": { "$ref": "#/definitions/WorkflowItemType" },
+        "artifactId": { "type": "string", "format": "uuid" },
+        "parentArtifactId": { "type": ["string", "null"], "format": "uuid" },
+        "title": { "type": "string" },
+        "metadata": { "type": "object", "additionalProperties": true },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "WorkflowSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "runId", "kind", "payload", "sha256", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "runId": { "type": "string", "format": "uuid" },
+        "kind": { "type": "string", "enum": ["definition", "input", "output", "config"] },
+        "payload": { "type": "object", "additionalProperties": true },
+        "sha256": { "type": "string", "minLength": 64, "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
 
     "Source": {
       "description": "信源（SPEC-003 §2）",
@@ -462,13 +577,24 @@
       "description": "全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。",
       "type": "object",
       "additionalProperties": false,
-      "required": ["sourceFetch", "topicScout", "topicEvaluate", "articleWrite", "memoryReflect"],
+      "required": ["contentWorkflow", "sourceFetch", "topicScout", "topicEvaluate", "articleWrite", "memoryReflect"],
       "properties": {
+        "contentWorkflow": { "$ref": "#/definitions/ContentWorkflowSchedule" },
         "sourceFetch": { "$ref": "#/definitions/SourceFetchSchedule" },
         "topicScout": { "$ref": "#/definitions/TopicScoutSchedule" },
         "topicEvaluate": { "$ref": "#/definitions/TopicEvaluateSchedule" },
         "articleWrite": { "$ref": "#/definitions/ArticleWriteSchedule" },
         "memoryReflect": { "$ref": "#/definitions/MemoryReflectSchedule" }
+      }
+    },
+    "ContentWorkflowSchedule": {
+      "description": "内容生产工作流调度：按固定小时间隔创建完整 WorkflowRun",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "intervalHours"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "intervalHours": { "type": "integer", "minimum": 1, "maximum": 168 }
       }
     },
     "SourceFetchSchedule": {

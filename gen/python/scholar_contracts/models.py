@@ -135,6 +135,155 @@ class AgentRunStatus(StrEnum):
     failed = 'failed'
 
 
+class WorkflowRunStatus(StrEnum):
+    """
+    一次完整内容生产运行的状态（SPEC-010 §3.3）
+    """
+
+    queued = 'queued'
+    running = 'running'
+    waiting_human_review = 'waiting_human_review'
+    completed = 'completed'
+    completed_empty = 'completed_empty'
+    partial_failed = 'partial_failed'
+    failed = 'failed'
+    cancelled = 'cancelled'
+
+
+class WorkflowNodeKey(StrEnum):
+    source_fetch = 'source_fetch'
+    topic_scout = 'topic_scout'
+    topic_evaluate = 'topic_evaluate'
+    article_write = 'article_write'
+    article_evaluate = 'article_evaluate'
+    human_review = 'human_review'
+
+
+class WorkflowNodeStatus(StrEnum):
+    queued = 'queued'
+    running = 'running'
+    succeeded = 'succeeded'
+    partial_failed = 'partial_failed'
+    failed = 'failed'
+    skipped = 'skipped'
+    cancelled = 'cancelled'
+
+
+class WorkflowTriggerType(StrEnum):
+    scheduled = 'scheduled'
+    manual = 'manual'
+    replay = 'replay'
+
+
+class WorkflowDecision(StrEnum):
+    accepted = 'accepted'
+    rejected = 'rejected'
+    skipped = 'skipped'
+    failed = 'failed'
+
+
+class WorkflowItemType(StrEnum):
+    raw_item = 'raw_item'
+    topic = 'topic'
+    article = 'article'
+
+
+class WorkflowRunMode(StrEnum):
+    content_production = 'content_production'
+
+
+class WorkflowRunSummary(BaseModel):
+    """
+    动态漏斗聚合；数字是本次运行观测值，不是业务配额
+    """
+
+    model_config = ConfigDict(
+        extra='allow',
+    )
+    input: conint(ge=0) | None = None
+    accepted: conint(ge=0) | None = None
+    rejected: conint(ge=0) | None = None
+    skipped: conint(ge=0) | None = None
+    failed: conint(ge=0) | None = None
+    output: conint(ge=0) | None = None
+    reasonCounts: dict[str, conint(ge=0)] | None = None
+
+
+class WorkflowNodeRun(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: UUID
+    runId: UUID
+    nodeKey: WorkflowNodeKey
+    status: WorkflowNodeStatus
+    inputSnapshotId: UUID | None
+    outputSnapshotId: UUID | None
+    configSnapshot: dict[str, Any]
+    counts: WorkflowRunSummary
+    createdAt: AwareDatetime
+    startedAt: AwareDatetime | None = None
+    completedAt: AwareDatetime | None = None
+
+
+class WorkflowItemDecision(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: UUID
+    runId: UUID
+    nodeRunId: UUID
+    itemId: UUID
+    itemType: WorkflowItemType
+    decision: WorkflowDecision
+    reasonCode: str
+    reason: str
+    dimensionScores: dict[str, Any] | None = None
+    totalScore: confloat(ge=0.0, le=100.0) | None = None
+    threshold: float | None = None
+    weightVersion: conint(ge=1) | None = None
+    rubricVersion: str | None = None
+    inputRefs: dict[str, Any]
+    evidenceRefs: dict[str, Any]
+    agentRunId: UUID | None = None
+    traceId: str | None = None
+    createdAt: AwareDatetime
+
+
+class WorkflowArtifact(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: UUID
+    runId: UUID
+    nodeKey: WorkflowNodeKey
+    artifactType: WorkflowItemType
+    artifactId: UUID
+    parentArtifactId: UUID | None = None
+    title: str
+    metadata: dict[str, Any]
+    createdAt: AwareDatetime
+
+
+class Kind(StrEnum):
+    definition = 'definition'
+    input = 'input'
+    output = 'output'
+    config = 'config'
+
+
+class WorkflowSnapshot(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: UUID
+    runId: UUID
+    kind: Kind
+    payload: dict[str, Any]
+    sha256: constr(min_length=64, max_length=64)
+    createdAt: AwareDatetime
+
+
 class SourceRole(StrEnum):
     """
     material=能拿到原文，可作写作素材；signal=只有二手摘要，仅供发现（SPEC-003 §2.1）
@@ -614,6 +763,18 @@ class JobResult(BaseModel):
     langfuseTraceId: str | None
 
 
+class ContentWorkflowSchedule(BaseModel):
+    """
+    内容生产工作流调度：按固定小时间隔创建完整 WorkflowRun
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    enabled: bool
+    intervalHours: conint(ge=1, le=168)
+
+
 class SourceFetchSchedule(BaseModel):
     """
     采集调度：全局默认间隔，可被 sources.fetchConfig.intervalMinutes 逐源覆盖
@@ -904,6 +1065,7 @@ class SchedulerSettings(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
     )
+    contentWorkflow: ContentWorkflowSchedule
     sourceFetch: SourceFetchSchedule
     topicScout: TopicScoutSchedule
     topicEvaluate: TopicEvaluateSchedule

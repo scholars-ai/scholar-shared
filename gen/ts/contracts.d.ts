@@ -74,6 +74,53 @@ export type InsightStatus = "candidate" | "active" | "retired";
  */
 export type AgentRunStatus = "running" | "succeeded" | "failed";
 /**
+ * 一次完整内容生产运行的状态（SPEC-010 §3.3）
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowRunStatus".
+ */
+export type WorkflowRunStatus =
+  | "queued"
+  | "running"
+  | "waiting_human_review"
+  | "completed"
+  | "completed_empty"
+  | "partial_failed"
+  | "failed"
+  | "cancelled";
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowNodeKey".
+ */
+export type WorkflowNodeKey =
+  "source_fetch" | "topic_scout" | "topic_evaluate" | "article_write" | "article_evaluate" | "human_review";
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowNodeStatus".
+ */
+export type WorkflowNodeStatus =
+  "queued" | "running" | "succeeded" | "partial_failed" | "failed" | "skipped" | "cancelled";
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowTriggerType".
+ */
+export type WorkflowTriggerType = "scheduled" | "manual" | "replay";
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowDecision".
+ */
+export type WorkflowDecision = "accepted" | "rejected" | "skipped" | "failed";
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowItemType".
+ */
+export type WorkflowItemType = "raw_item" | "topic" | "article";
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowRunMode".
+ */
+export type WorkflowRunMode = "content_production";
+/**
  * material=能拿到原文，可作写作素材；signal=只有二手摘要，仅供发现（SPEC-003 §2.1）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
@@ -133,6 +180,104 @@ export type ArticleEvaluation = EvaluationCore & {
  */
 export interface ScholarsContracts {
   [k: string]: unknown;
+}
+/**
+ * 动态漏斗聚合；数字是本次运行观测值，不是业务配额
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowRunSummary".
+ */
+export interface WorkflowRunSummary {
+  input?: number;
+  accepted?: number;
+  rejected?: number;
+  skipped?: number;
+  failed?: number;
+  output?: number;
+  reasonCounts?: {
+    [k: string]: number;
+  };
+  [k: string]: unknown;
+}
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowNodeRun".
+ */
+export interface WorkflowNodeRun {
+  id: string;
+  runId: string;
+  nodeKey: WorkflowNodeKey;
+  status: WorkflowNodeStatus;
+  inputSnapshotId: string | null;
+  outputSnapshotId: string | null;
+  configSnapshot: {
+    [k: string]: unknown;
+  };
+  counts: WorkflowRunSummary;
+  createdAt: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
+}
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowItemDecision".
+ */
+export interface WorkflowItemDecision {
+  id: string;
+  runId: string;
+  nodeRunId: string;
+  itemId: string;
+  itemType: WorkflowItemType;
+  decision: WorkflowDecision;
+  reasonCode: string;
+  reason: string;
+  dimensionScores?: {
+    [k: string]: number;
+  } | null;
+  totalScore?: number | null;
+  threshold?: number | null;
+  weightVersion?: number | null;
+  rubricVersion?: string | null;
+  inputRefs: {
+    [k: string]: unknown;
+  };
+  evidenceRefs: {
+    [k: string]: unknown;
+  };
+  agentRunId?: string | null;
+  traceId?: string | null;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowArtifact".
+ */
+export interface WorkflowArtifact {
+  id: string;
+  runId: string;
+  nodeKey: WorkflowNodeKey;
+  artifactType: WorkflowItemType;
+  artifactId: string;
+  parentArtifactId?: string | null;
+  title: string;
+  metadata: {
+    [k: string]: unknown;
+  };
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowSnapshot".
+ */
+export interface WorkflowSnapshot {
+  id: string;
+  runId: string;
+  kind: "definition" | "input" | "output" | "config";
+  payload: {
+    [k: string]: unknown;
+  };
+  sha256: string;
+  createdAt: string;
 }
 /**
  * 信源（SPEC-003 §2）
@@ -569,11 +714,22 @@ export interface JobResult {
  * via the `definition` "SchedulerSettings".
  */
 export interface SchedulerSettings {
+  contentWorkflow: ContentWorkflowSchedule;
   sourceFetch: SourceFetchSchedule;
   topicScout: TopicScoutSchedule;
   topicEvaluate: TopicEvaluateSchedule;
   articleWrite: ArticleWriteSchedule;
   memoryReflect: MemoryReflectSchedule;
+}
+/**
+ * 内容生产工作流调度：按固定小时间隔创建完整 WorkflowRun
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "ContentWorkflowSchedule".
+ */
+export interface ContentWorkflowSchedule {
+  enabled: boolean;
+  intervalHours: number;
 }
 /**
  * 采集调度：全局默认间隔，可被 sources.fetchConfig.intervalMinutes 逐源覆盖
