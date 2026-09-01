@@ -487,7 +487,8 @@
         "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "topicId": { "type": "string", "format": "uuid" },
         "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
-        "rubricVersion": { "description": "缺省用当前生效版本", "type": "string" }
+        "rubricVersion": { "description": "缺省用当前生效版本", "type": "string" },
+        "workflowConfigOverrides": { "$ref": "#/definitions/WorkflowConfigOverrides" }
       }
     },
     "RewriteContext": {
@@ -511,7 +512,8 @@
         "topicId": { "type": "string", "format": "uuid" },
         "platform": { "$ref": "#/definitions/Platform" },
         "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
-        "rewrite": { "$ref": "#/definitions/RewriteContext" }
+        "rewrite": { "$ref": "#/definitions/RewriteContext" },
+        "workflowConfigOverrides": { "$ref": "#/definitions/WorkflowConfigOverrides" }
       }
     },
     "ArticleEvaluateJob": {
@@ -523,7 +525,35 @@
         "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "articleId": { "type": "string", "format": "uuid" },
         "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
-        "rubricVersion": { "type": "string" }
+        "rubricVersion": { "type": "string" },
+        "workflowConfigOverrides": { "$ref": "#/definitions/WorkflowConfigOverrides" }
+      }
+    },
+    "WorkflowConfigOverrides": {
+      "description": "Replay 节点的显式配置覆盖；未知字段禁止传入",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agentVersion": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 },
+        "rubricVersion": { "type": "string", "minLength": 1 },
+        "topicRubricVersion": { "type": "string", "minLength": 1 },
+        "articleRubricVersion": { "type": "string", "minLength": 1 },
+        "weightVersion": { "type": "integer", "minimum": 1 },
+        "topicWeightVersion": { "type": "integer", "minimum": 1 },
+        "articleWeightVersion": { "type": "integer", "minimum": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "topicScoutModel": { "type": "string", "minLength": 1 },
+        "topicJudgeModel": { "type": "string", "minLength": 1 },
+        "outlineModel": { "type": "string", "minLength": 1 },
+        "draftModel": { "type": "string", "minLength": 1 },
+        "criticModel": { "type": "string", "minLength": 1 },
+        "articleJudgeModel": { "type": "string", "minLength": 1 },
+        "passThreshold": { "type": "number", "minimum": 0, "maximum": 100 },
+        "topicPassThreshold": { "type": "number", "minimum": 0, "maximum": 100 },
+        "articlePassThreshold": { "type": "number", "minimum": 0, "maximum": 100 },
+        "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "maxBatchSize": { "type": "integer", "minimum": 1, "maximum": 1000 }
       }
     },
     "SourceFetchJob": {

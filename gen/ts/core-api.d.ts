@@ -827,15 +827,43 @@ export interface components {
         WorkflowNodeStatus: "queued" | "running" | "succeeded" | "partial_failed" | "failed" | "skipped" | "cancelled";
         /** @enum {string} */
         WorkflowTriggerType: "scheduled" | "manual" | "replay";
+        /** @enum {string} */
+        ReplayMode: "full" | "failed_items" | "selected_items" | "evaluate_only";
+        ReplayScope: {
+            mode: components["schemas"]["ReplayMode"];
+            itemIds?: string[];
+            /**
+             * @description 显式使用当前数据重新解析输入；默认严格复用父运行快照
+             * @default false
+             */
+            useCurrentInput: boolean;
+        };
+        WorkflowConfigOverrides: {
+            agentVersion?: string;
+            promptVersion?: string;
+            rubricVersion?: string;
+            topicRubricVersion?: string;
+            articleRubricVersion?: string;
+            weightVersion?: number;
+            topicWeightVersion?: number;
+            articleWeightVersion?: number;
+            model?: string;
+            topicScoutModel?: string;
+            topicJudgeModel?: string;
+            outlineModel?: string;
+            draftModel?: string;
+            criticModel?: string;
+            articleJudgeModel?: string;
+            passThreshold?: number;
+            topicPassThreshold?: number;
+            articlePassThreshold?: number;
+            maxConcurrency?: number;
+            maxBatchSize?: number;
+        };
         ReplayWorkflowRequest: {
             replayFromNode: components["schemas"]["WorkflowNodeKey"];
-            /** @description full, failed_items, selected_items 或 evaluate_only 等范围 */
-            replayScope: {
-                [key: string]: unknown;
-            };
-            configOverrides?: {
-                [key: string]: unknown;
-            };
+            replayScope: components["schemas"]["ReplayScope"];
+            configOverrides?: components["schemas"]["WorkflowConfigOverrides"];
             reason?: string;
         };
         WorkflowRunComparison: {
@@ -845,7 +873,7 @@ export interface components {
             otherRunId: string;
             sameInput: boolean;
             stages: {
-                [key: string]: unknown;
+                [key: string]: components["schemas"]["WorkflowStageComparison"];
             };
             reasonCounts: {
                 [key: string]: unknown;
@@ -853,6 +881,27 @@ export interface components {
             cost?: {
                 [key: string]: unknown;
             };
+            artifacts?: {
+                [key: string]: unknown;
+            };
+        };
+        WorkflowStageComparison: {
+            base: components["schemas"]["WorkflowStageMetrics"];
+            other: components["schemas"]["WorkflowStageMetrics"];
+        };
+        WorkflowStageMetrics: {
+            inputCount?: number;
+            outputCount?: number;
+            accepted?: number;
+            rejected?: number;
+            skipped?: number;
+            failed?: number;
+            passRate?: number | null;
+            scoreDistribution?: {
+                [key: string]: unknown;
+            };
+            tokenCount?: number | null;
+            cost?: number | null;
         };
         Health: {
             /** @enum {string} */

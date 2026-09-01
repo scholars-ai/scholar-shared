@@ -642,26 +642,6 @@ class JobTelemetryMeta(BaseModel):
     triggerType: TriggerType
 
 
-class TopicEvaluateJob(BaseModel):
-    """
-    queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
-    """
-
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
-    topicId: UUID
-    workflowRunId: UUID | None = None
-    """
-    生产工作流运行 ID；诊断任务可缺省
-    """
-    rubricVersion: str | None = None
-    """
-    缺省用当前生效版本
-    """
-
-
 class RewriteContext(BaseModel):
     """
     回炉重写上下文（SPEC-005 §2）
@@ -678,39 +658,34 @@ class RewriteContext(BaseModel):
     """
 
 
-class ArticleWriteJob(BaseModel):
+class WorkflowConfigOverrides(BaseModel):
     """
-    queue: article_write
-    """
-
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
-    topicId: UUID
-    platform: Platform
-    workflowRunId: UUID | None = None
-    """
-    生产工作流运行 ID；诊断任务可缺省
-    """
-    rewrite: RewriteContext | None = None
-
-
-class ArticleEvaluateJob(BaseModel):
-    """
-    queue: article_evaluate
+    Replay 节点的显式配置覆盖；未知字段禁止传入
     """
 
     model_config = ConfigDict(
         extra='forbid',
     )
-    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
-    articleId: UUID
-    workflowRunId: UUID | None = None
-    """
-    生产工作流运行 ID；诊断任务可缺省
-    """
-    rubricVersion: str | None = None
+    agentVersion: constr(min_length=1) | None = None
+    promptVersion: constr(min_length=1) | None = None
+    rubricVersion: constr(min_length=1) | None = None
+    topicRubricVersion: constr(min_length=1) | None = None
+    articleRubricVersion: constr(min_length=1) | None = None
+    weightVersion: conint(ge=1) | None = None
+    topicWeightVersion: conint(ge=1) | None = None
+    articleWeightVersion: conint(ge=1) | None = None
+    model: constr(min_length=1) | None = None
+    topicScoutModel: constr(min_length=1) | None = None
+    topicJudgeModel: constr(min_length=1) | None = None
+    outlineModel: constr(min_length=1) | None = None
+    draftModel: constr(min_length=1) | None = None
+    criticModel: constr(min_length=1) | None = None
+    articleJudgeModel: constr(min_length=1) | None = None
+    passThreshold: confloat(ge=0.0, le=100.0) | None = None
+    topicPassThreshold: confloat(ge=0.0, le=100.0) | None = None
+    articlePassThreshold: confloat(ge=0.0, le=100.0) | None = None
+    maxConcurrency: conint(ge=1, le=32) | None = None
+    maxBatchSize: conint(ge=1, le=1000) | None = None
 
 
 class SourceFetchJob(BaseModel):
@@ -1079,6 +1054,64 @@ class SourceFetchConfig(BaseModel):
     """
     覆盖全局采集间隔；null/缺省=沿用全局默认（SPEC-008 §3.1）
     """
+
+
+class TopicEvaluateJob(BaseModel):
+    """
+    queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
+    topicId: UUID
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
+    rubricVersion: str | None = None
+    """
+    缺省用当前生效版本
+    """
+    workflowConfigOverrides: WorkflowConfigOverrides | None = None
+
+
+class ArticleWriteJob(BaseModel):
+    """
+    queue: article_write
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
+    topicId: UUID
+    platform: Platform
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
+    rewrite: RewriteContext | None = None
+    workflowConfigOverrides: WorkflowConfigOverrides | None = None
+
+
+class ArticleEvaluateJob(BaseModel):
+    """
+    queue: article_evaluate
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
+    articleId: UUID
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
+    rubricVersion: str | None = None
+    workflowConfigOverrides: WorkflowConfigOverrides | None = None
 
 
 class SchedulerSettings(BaseModel):

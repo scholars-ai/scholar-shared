@@ -255,6 +255,10 @@ type ArticleEvaluateJob struct {
 	// RubricVersion corresponds to the JSON schema field "rubricVersion".
 	RubricVersion *string `json:"rubricVersion,omitempty,omitzero" yaml:"rubricVersion,omitempty" mapstructure:"rubricVersion,omitempty"`
 
+	// WorkflowConfigOverrides corresponds to the JSON schema field
+	// "workflowConfigOverrides".
+	WorkflowConfigOverrides *WorkflowConfigOverrides `json:"workflowConfigOverrides,omitempty,omitzero" yaml:"workflowConfigOverrides,omitempty" mapstructure:"workflowConfigOverrides,omitempty"`
+
 	// 生产工作流运行 ID；诊断任务可缺省
 	WorkflowRunId ArticleEvaluateJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
 }
@@ -368,6 +372,10 @@ type ArticleWriteJob struct {
 
 	// TopicId corresponds to the JSON schema field "topicId".
 	TopicId string `json:"topicId" yaml:"topicId" mapstructure:"topicId"`
+
+	// WorkflowConfigOverrides corresponds to the JSON schema field
+	// "workflowConfigOverrides".
+	WorkflowConfigOverrides *WorkflowConfigOverrides `json:"workflowConfigOverrides,omitempty,omitzero" yaml:"workflowConfigOverrides,omitempty" mapstructure:"workflowConfigOverrides,omitempty"`
 
 	// 生产工作流运行 ID；诊断任务可缺省
 	WorkflowRunId ArticleWriteJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
@@ -2637,6 +2645,10 @@ type TopicEvaluateJob struct {
 	// TopicId corresponds to the JSON schema field "topicId".
 	TopicId string `json:"topicId" yaml:"topicId" mapstructure:"topicId"`
 
+	// WorkflowConfigOverrides corresponds to the JSON schema field
+	// "workflowConfigOverrides".
+	WorkflowConfigOverrides *WorkflowConfigOverrides `json:"workflowConfigOverrides,omitempty,omitzero" yaml:"workflowConfigOverrides,omitempty" mapstructure:"workflowConfigOverrides,omitempty"`
+
 	// 生产工作流运行 ID；诊断任务可缺省
 	WorkflowRunId TopicEvaluateJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
 }
@@ -3190,6 +3202,158 @@ func (j *WorkflowArtifact) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	*j = WorkflowArtifact(plain)
+	return nil
+}
+
+// Replay 节点的显式配置覆盖；未知字段禁止传入
+type WorkflowConfigOverrides struct {
+	// AgentVersion corresponds to the JSON schema field "agentVersion".
+	AgentVersion *string `json:"agentVersion,omitempty,omitzero" yaml:"agentVersion,omitempty" mapstructure:"agentVersion,omitempty"`
+
+	// ArticleJudgeModel corresponds to the JSON schema field "articleJudgeModel".
+	ArticleJudgeModel *string `json:"articleJudgeModel,omitempty,omitzero" yaml:"articleJudgeModel,omitempty" mapstructure:"articleJudgeModel,omitempty"`
+
+	// ArticlePassThreshold corresponds to the JSON schema field
+	// "articlePassThreshold".
+	ArticlePassThreshold *float64 `json:"articlePassThreshold,omitempty,omitzero" yaml:"articlePassThreshold,omitempty" mapstructure:"articlePassThreshold,omitempty"`
+
+	// ArticleRubricVersion corresponds to the JSON schema field
+	// "articleRubricVersion".
+	ArticleRubricVersion *string `json:"articleRubricVersion,omitempty,omitzero" yaml:"articleRubricVersion,omitempty" mapstructure:"articleRubricVersion,omitempty"`
+
+	// ArticleWeightVersion corresponds to the JSON schema field
+	// "articleWeightVersion".
+	ArticleWeightVersion *int `json:"articleWeightVersion,omitempty,omitzero" yaml:"articleWeightVersion,omitempty" mapstructure:"articleWeightVersion,omitempty"`
+
+	// CriticModel corresponds to the JSON schema field "criticModel".
+	CriticModel *string `json:"criticModel,omitempty,omitzero" yaml:"criticModel,omitempty" mapstructure:"criticModel,omitempty"`
+
+	// DraftModel corresponds to the JSON schema field "draftModel".
+	DraftModel *string `json:"draftModel,omitempty,omitzero" yaml:"draftModel,omitempty" mapstructure:"draftModel,omitempty"`
+
+	// MaxBatchSize corresponds to the JSON schema field "maxBatchSize".
+	MaxBatchSize *int `json:"maxBatchSize,omitempty,omitzero" yaml:"maxBatchSize,omitempty" mapstructure:"maxBatchSize,omitempty"`
+
+	// MaxConcurrency corresponds to the JSON schema field "maxConcurrency".
+	MaxConcurrency *int `json:"maxConcurrency,omitempty,omitzero" yaml:"maxConcurrency,omitempty" mapstructure:"maxConcurrency,omitempty"`
+
+	// Model corresponds to the JSON schema field "model".
+	Model *string `json:"model,omitempty,omitzero" yaml:"model,omitempty" mapstructure:"model,omitempty"`
+
+	// OutlineModel corresponds to the JSON schema field "outlineModel".
+	OutlineModel *string `json:"outlineModel,omitempty,omitzero" yaml:"outlineModel,omitempty" mapstructure:"outlineModel,omitempty"`
+
+	// PassThreshold corresponds to the JSON schema field "passThreshold".
+	PassThreshold *float64 `json:"passThreshold,omitempty,omitzero" yaml:"passThreshold,omitempty" mapstructure:"passThreshold,omitempty"`
+
+	// PromptVersion corresponds to the JSON schema field "promptVersion".
+	PromptVersion *string `json:"promptVersion,omitempty,omitzero" yaml:"promptVersion,omitempty" mapstructure:"promptVersion,omitempty"`
+
+	// RubricVersion corresponds to the JSON schema field "rubricVersion".
+	RubricVersion *string `json:"rubricVersion,omitempty,omitzero" yaml:"rubricVersion,omitempty" mapstructure:"rubricVersion,omitempty"`
+
+	// TopicJudgeModel corresponds to the JSON schema field "topicJudgeModel".
+	TopicJudgeModel *string `json:"topicJudgeModel,omitempty,omitzero" yaml:"topicJudgeModel,omitempty" mapstructure:"topicJudgeModel,omitempty"`
+
+	// TopicPassThreshold corresponds to the JSON schema field "topicPassThreshold".
+	TopicPassThreshold *float64 `json:"topicPassThreshold,omitempty,omitzero" yaml:"topicPassThreshold,omitempty" mapstructure:"topicPassThreshold,omitempty"`
+
+	// TopicRubricVersion corresponds to the JSON schema field "topicRubricVersion".
+	TopicRubricVersion *string `json:"topicRubricVersion,omitempty,omitzero" yaml:"topicRubricVersion,omitempty" mapstructure:"topicRubricVersion,omitempty"`
+
+	// TopicScoutModel corresponds to the JSON schema field "topicScoutModel".
+	TopicScoutModel *string `json:"topicScoutModel,omitempty,omitzero" yaml:"topicScoutModel,omitempty" mapstructure:"topicScoutModel,omitempty"`
+
+	// TopicWeightVersion corresponds to the JSON schema field "topicWeightVersion".
+	TopicWeightVersion *int `json:"topicWeightVersion,omitempty,omitzero" yaml:"topicWeightVersion,omitempty" mapstructure:"topicWeightVersion,omitempty"`
+
+	// WeightVersion corresponds to the JSON schema field "weightVersion".
+	WeightVersion *int `json:"weightVersion,omitempty,omitzero" yaml:"weightVersion,omitempty" mapstructure:"weightVersion,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowConfigOverrides) UnmarshalJSON(value []byte) error {
+	type Plain WorkflowConfigOverrides
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.AgentVersion != nil && utf8.RuneCountInString(string(*plain.AgentVersion)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "agentVersion", 1)
+	}
+	if plain.ArticleJudgeModel != nil && utf8.RuneCountInString(string(*plain.ArticleJudgeModel)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "articleJudgeModel", 1)
+	}
+	if plain.ArticlePassThreshold != nil && 100 < *plain.ArticlePassThreshold {
+		return fmt.Errorf("field %s: must be <= %v", "articlePassThreshold", 100)
+	}
+	if plain.ArticlePassThreshold != nil && 0 > *plain.ArticlePassThreshold {
+		return fmt.Errorf("field %s: must be >= %v", "articlePassThreshold", 0)
+	}
+	if plain.ArticleRubricVersion != nil && utf8.RuneCountInString(string(*plain.ArticleRubricVersion)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "articleRubricVersion", 1)
+	}
+	if plain.ArticleWeightVersion != nil && 1 > *plain.ArticleWeightVersion {
+		return fmt.Errorf("field %s: must be >= %v", "articleWeightVersion", 1)
+	}
+	if plain.CriticModel != nil && utf8.RuneCountInString(string(*plain.CriticModel)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "criticModel", 1)
+	}
+	if plain.DraftModel != nil && utf8.RuneCountInString(string(*plain.DraftModel)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "draftModel", 1)
+	}
+	if plain.MaxBatchSize != nil && 1000 < *plain.MaxBatchSize {
+		return fmt.Errorf("field %s: must be <= %v", "maxBatchSize", 1000)
+	}
+	if plain.MaxBatchSize != nil && 1 > *plain.MaxBatchSize {
+		return fmt.Errorf("field %s: must be >= %v", "maxBatchSize", 1)
+	}
+	if plain.MaxConcurrency != nil && 32 < *plain.MaxConcurrency {
+		return fmt.Errorf("field %s: must be <= %v", "maxConcurrency", 32)
+	}
+	if plain.MaxConcurrency != nil && 1 > *plain.MaxConcurrency {
+		return fmt.Errorf("field %s: must be >= %v", "maxConcurrency", 1)
+	}
+	if plain.Model != nil && utf8.RuneCountInString(string(*plain.Model)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "model", 1)
+	}
+	if plain.OutlineModel != nil && utf8.RuneCountInString(string(*plain.OutlineModel)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "outlineModel", 1)
+	}
+	if plain.PassThreshold != nil && 100 < *plain.PassThreshold {
+		return fmt.Errorf("field %s: must be <= %v", "passThreshold", 100)
+	}
+	if plain.PassThreshold != nil && 0 > *plain.PassThreshold {
+		return fmt.Errorf("field %s: must be >= %v", "passThreshold", 0)
+	}
+	if plain.PromptVersion != nil && utf8.RuneCountInString(string(*plain.PromptVersion)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "promptVersion", 1)
+	}
+	if plain.RubricVersion != nil && utf8.RuneCountInString(string(*plain.RubricVersion)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "rubricVersion", 1)
+	}
+	if plain.TopicJudgeModel != nil && utf8.RuneCountInString(string(*plain.TopicJudgeModel)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "topicJudgeModel", 1)
+	}
+	if plain.TopicPassThreshold != nil && 100 < *plain.TopicPassThreshold {
+		return fmt.Errorf("field %s: must be <= %v", "topicPassThreshold", 100)
+	}
+	if plain.TopicPassThreshold != nil && 0 > *plain.TopicPassThreshold {
+		return fmt.Errorf("field %s: must be >= %v", "topicPassThreshold", 0)
+	}
+	if plain.TopicRubricVersion != nil && utf8.RuneCountInString(string(*plain.TopicRubricVersion)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "topicRubricVersion", 1)
+	}
+	if plain.TopicScoutModel != nil && utf8.RuneCountInString(string(*plain.TopicScoutModel)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "topicScoutModel", 1)
+	}
+	if plain.TopicWeightVersion != nil && 1 > *plain.TopicWeightVersion {
+		return fmt.Errorf("field %s: must be >= %v", "topicWeightVersion", 1)
+	}
+	if plain.WeightVersion != nil && 1 > *plain.WeightVersion {
+		return fmt.Errorf("field %s: must be >= %v", "weightVersion", 1)
+	}
+	*j = WorkflowConfigOverrides(plain)
 	return nil
 }
 
