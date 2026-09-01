@@ -4023,6 +4023,9 @@ func (j *WorkflowRunSummary) UnmarshalJSON(value []byte) error {
 }
 
 type WorkflowSnapshot struct {
+	// ArchivedAt corresponds to the JSON schema field "archivedAt".
+	ArchivedAt *time.Time `json:"archivedAt,omitempty,omitzero" yaml:"archivedAt,omitempty" mapstructure:"archivedAt,omitempty"`
+
 	// CreatedAt corresponds to the JSON schema field "createdAt".
 	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" mapstructure:"createdAt"`
 
@@ -4035,11 +4038,17 @@ type WorkflowSnapshot struct {
 	// Payload corresponds to the JSON schema field "payload".
 	Payload WorkflowSnapshotPayload `json:"payload" yaml:"payload" mapstructure:"payload"`
 
+	// RetentionUntil corresponds to the JSON schema field "retentionUntil".
+	RetentionUntil *time.Time `json:"retentionUntil,omitempty,omitzero" yaml:"retentionUntil,omitempty" mapstructure:"retentionUntil,omitempty"`
+
 	// RunId corresponds to the JSON schema field "runId".
 	RunId string `json:"runId" yaml:"runId" mapstructure:"runId"`
 
 	// Sha256 corresponds to the JSON schema field "sha256".
 	Sha256 string `json:"sha256" yaml:"sha256" mapstructure:"sha256"`
+
+	// StorageRef corresponds to the JSON schema field "storageRef".
+	StorageRef WorkflowSnapshotStorageRef `json:"storageRef,omitempty,omitzero" yaml:"storageRef,omitempty" mapstructure:"storageRef,omitempty"`
 }
 
 type WorkflowSnapshotKind string
@@ -4077,6 +4086,8 @@ func (j *WorkflowSnapshotKind) UnmarshalJSON(value []byte) error {
 }
 
 type WorkflowSnapshotPayload map[string]interface{}
+
+type WorkflowSnapshotStorageRef *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *WorkflowSnapshot) UnmarshalJSON(value []byte) error {

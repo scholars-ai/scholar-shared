@@ -172,6 +172,9 @@
         "kind": { "type": "string", "enum": ["definition", "input", "output", "config"] },
         "payload": { "type": "object", "additionalProperties": true },
         "sha256": { "type": "string", "minLength": 64, "maxLength": 64 },
+        "archivedAt": { "type": ["string", "null"], "format": "date-time" },
+        "storageRef": { "type": ["string", "null"] },
+        "retentionUntil": { "type": ["string", "null"], "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
     },

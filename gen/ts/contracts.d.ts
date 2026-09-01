@@ -277,6 +277,9 @@ export interface WorkflowSnapshot {
     [k: string]: unknown;
   };
   sha256: string;
+  archivedAt?: string | null;
+  storageRef?: string | null;
+  retentionUntil?: string | null;
   createdAt: string;
 }
 /**

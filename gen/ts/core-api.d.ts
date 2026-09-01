@@ -565,8 +565,10 @@ export interface paths {
         /** 查询工作流节点输入输出快照 */
         get: operations["getWorkflowSnapshot"];
         put?: never;
-        post?: never;
-        delete?: never;
+        /** 归档工作流快照（可恢复） */
+        post: operations["archiveWorkflowSnapshot"];
+        /** 恢复已归档工作流快照 */
+        delete: operations["restoreWorkflowSnapshot"];
         options?: never;
         head?: never;
         patch?: never;
@@ -845,6 +847,11 @@ export interface components {
                 [key: string]: unknown;
             };
             sha256: string;
+            /** Format: date-time */
+            archivedAt?: string | null;
+            storageRef?: string | null;
+            /** Format: date-time */
+            retentionUntil?: string | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -2406,6 +2413,56 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["WorkflowSnapshot"];
                 };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    archiveWorkflowSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    storageRef?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description 快照已归档 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    restoreWorkflowSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 快照已恢复 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             404: components["responses"]["NotFound"];
         };

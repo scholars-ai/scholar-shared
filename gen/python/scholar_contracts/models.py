@@ -281,6 +281,9 @@ class WorkflowSnapshot(BaseModel):
     kind: Kind
     payload: dict[str, Any]
     sha256: constr(min_length=64, max_length=64)
+    archivedAt: AwareDatetime | None = None
+    storageRef: str | None = None
+    retentionUntil: AwareDatetime | None = None
     createdAt: AwareDatetime
 
 

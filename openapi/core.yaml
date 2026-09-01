@@ -776,6 +776,45 @@ paths:
                 $ref: "#/components/schemas/WorkflowSnapshot"
         "404":
           $ref: "#/components/responses/NotFound"
+    post:
+      operationId: archiveWorkflowSnapshot
+      summary: 归档工作流快照（可恢复）
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: snapshotId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                storageRef: { type: string, minLength: 1 }
+      responses:
+        "204": { description: 快照已归档 }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: restoreWorkflowSnapshot
+      summary: 恢复已归档工作流快照
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: snapshotId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: 快照已恢复 }
+        "404": { $ref: "#/components/responses/NotFound" }
   /v1/workflow/runs/{runId}/stream:
     get:
       operationId: streamWorkflowRun
@@ -1107,6 +1146,9 @@ components:
         kind: { type: string, enum: [definition, input, output, config] }
         payload: { type: object, additionalProperties: true }
         sha256: { type: string, minLength: 64, maxLength: 64 }
+        archivedAt: { type: string, format: date-time, nullable: true }
+        storageRef: { type: string, nullable: true }
+        retentionUntil: { type: string, format: date-time, nullable: true }
         createdAt: { type: string, format: date-time }
     WorkflowConfigSnapshot:
       type: object
