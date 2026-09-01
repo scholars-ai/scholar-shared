@@ -754,6 +754,28 @@ paths:
                   $ref: "#/components/schemas/WorkflowArtifact"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/workflow/runs/{runId}/snapshots/{snapshotId}:
+    get:
+      operationId: getWorkflowSnapshot
+      summary: 查询工作流节点输入输出快照
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: snapshotId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowSnapshot"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /v1/workflow/runs/{runId}/stream:
     get:
       operationId: streamWorkflowRun
@@ -1071,8 +1093,20 @@ components:
         nodeKey: { type: string }
         artifactType: { type: string }
         artifactId: { type: string, format: uuid }
+        parentArtifactId: { type: string, format: uuid, nullable: true }
+        snapshotId: { type: string, format: uuid, nullable: true }
         title: { type: string }
         metadata: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    WorkflowSnapshot:
+      type: object
+      required: [id, runId, kind, payload, sha256, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        runId: { type: string, format: uuid }
+        kind: { type: string, enum: [definition, input, output, config] }
+        payload: { type: object, additionalProperties: true }
+        sha256: { type: string, minLength: 64, maxLength: 64 }
         createdAt: { type: string, format: date-time }
     WorkflowDecision:
       type: string
@@ -1175,6 +1209,7 @@ components:
         skipped: { type: integer, minimum: 0 }
         failed: { type: integer, minimum: 0 }
         passRate: { type: number, minimum: 0, maximum: 1, nullable: true }
+        durationSeconds: { type: number, minimum: 0, nullable: true }
         scoreDistribution: { type: object, additionalProperties: true }
         tokenCount: { type: integer, minimum: 0, nullable: true }
         cost: { type: number, minimum: 0, nullable: true }

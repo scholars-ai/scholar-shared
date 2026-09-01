@@ -555,6 +555,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workflow/runs/{runId}/snapshots/{snapshotId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询工作流节点输入输出快照 */
+        get: operations["getWorkflowSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workflow/runs/{runId}/stream": {
         parameters: {
             query?: never;
@@ -806,10 +823,28 @@ export interface components {
             artifactType: string;
             /** Format: uuid */
             artifactId: string;
+            /** Format: uuid */
+            parentArtifactId?: string | null;
+            /** Format: uuid */
+            snapshotId?: string | null;
             title: string;
             metadata: {
                 [key: string]: unknown;
             };
+            /** Format: date-time */
+            createdAt: string;
+        };
+        WorkflowSnapshot: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            runId: string;
+            /** @enum {string} */
+            kind: "definition" | "input" | "output" | "config";
+            payload: {
+                [key: string]: unknown;
+            };
+            sha256: string;
             /** Format: date-time */
             createdAt: string;
         };
@@ -897,6 +932,7 @@ export interface components {
             skipped?: number;
             failed?: number;
             passRate?: number | null;
+            durationSeconds?: number | null;
             scoreDistribution?: {
                 [key: string]: unknown;
             };
@@ -2322,6 +2358,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkflowArtifact"][];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getWorkflowSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+                snapshotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowSnapshot"];
                 };
             };
             404: components["responses"]["NotFound"];
