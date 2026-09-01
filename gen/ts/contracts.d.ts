@@ -598,7 +598,7 @@ export interface JobTelemetryMeta {
   tracestate?: string | null;
   baggage?: string | null;
   enqueuedAt: string;
-  triggerType: "api" | "scheduler" | "harvester" | "worker";
+  triggerType: "api" | "scheduler" | "harvester" | "worker" | "replay";
 }
 /**
  * queue: topic_evaluate（SPEC-001 §3。队列名注册表见 queues.json）

@@ -1031,6 +1031,7 @@ type JobTelemetryMetaTriggerType string
 
 const JobTelemetryMetaTriggerTypeApi JobTelemetryMetaTriggerType = "api"
 const JobTelemetryMetaTriggerTypeHarvester JobTelemetryMetaTriggerType = "harvester"
+const JobTelemetryMetaTriggerTypeReplay JobTelemetryMetaTriggerType = "replay"
 const JobTelemetryMetaTriggerTypeScheduler JobTelemetryMetaTriggerType = "scheduler"
 const JobTelemetryMetaTriggerTypeWorker JobTelemetryMetaTriggerType = "worker"
 
@@ -1039,6 +1040,7 @@ var enumValues_JobTelemetryMetaTriggerType = []interface{}{
 	"scheduler",
 	"harvester",
 	"worker",
+	"replay",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

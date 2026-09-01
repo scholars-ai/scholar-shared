@@ -622,6 +622,7 @@ class TriggerType(StrEnum):
     scheduler = 'scheduler'
     harvester = 'harvester'
     worker = 'worker'
+    replay = 'replay'
 
 
 class JobTelemetryMeta(BaseModel):

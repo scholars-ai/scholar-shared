@@ -473,7 +473,7 @@
         "enqueuedAt": { "type": "string", "format": "date-time" },
         "triggerType": {
           "type": "string",
-          "enum": ["api", "scheduler", "harvester", "worker"]
+          "enum": ["api", "scheduler", "harvester", "worker", "replay"]
         }
       }
     },
