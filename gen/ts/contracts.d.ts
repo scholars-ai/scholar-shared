@@ -617,6 +617,35 @@ export interface TopicEvaluateJob {
    * 缺省用当前生效版本
    */
   rubricVersion?: string;
+  workflowConfigOverrides?: WorkflowConfigOverrides;
+}
+/**
+ * Replay 节点的显式配置覆盖；未知字段禁止传入
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowConfigOverrides".
+ */
+export interface WorkflowConfigOverrides {
+  agentVersion?: string;
+  promptVersion?: string;
+  rubricVersion?: string;
+  topicRubricVersion?: string;
+  articleRubricVersion?: string;
+  weightVersion?: number;
+  topicWeightVersion?: number;
+  articleWeightVersion?: number;
+  model?: string;
+  topicScoutModel?: string;
+  topicJudgeModel?: string;
+  outlineModel?: string;
+  draftModel?: string;
+  criticModel?: string;
+  articleJudgeModel?: string;
+  passThreshold?: number;
+  topicPassThreshold?: number;
+  articlePassThreshold?: number;
+  maxConcurrency?: number;
+  maxBatchSize?: number;
 }
 /**
  * 回炉重写上下文（SPEC-005 §2）
@@ -646,7 +675,12 @@ export interface ArticleWriteJob {
    * 生产工作流运行 ID；诊断任务可缺省
    */
   workflowRunId?: string | null;
+  /**
+   * 节点回放写作；生成新的文章版本而不复用父运行文章
+   */
+  replay?: boolean;
   rewrite?: RewriteContext;
+  workflowConfigOverrides?: WorkflowConfigOverrides;
 }
 /**
  * queue: article_evaluate
@@ -662,6 +696,7 @@ export interface ArticleEvaluateJob {
    */
   workflowRunId?: string | null;
   rubricVersion?: string;
+  workflowConfigOverrides?: WorkflowConfigOverrides;
 }
 /**
  * queue: source_fetch（core cron 投递，agents 采集，SPEC-003 §3）

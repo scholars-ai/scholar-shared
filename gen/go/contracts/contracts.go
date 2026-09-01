@@ -367,6 +367,9 @@ type ArticleWriteJob struct {
 	// Platform corresponds to the JSON schema field "platform".
 	Platform Platform `json:"platform" yaml:"platform" mapstructure:"platform"`
 
+	// 节点回放写作；生成新的文章版本而不复用父运行文章
+	Replay *bool `json:"replay,omitempty,omitzero" yaml:"replay,omitempty" mapstructure:"replay,omitempty"`
+
 	// Rewrite corresponds to the JSON schema field "rewrite".
 	Rewrite *RewriteContext `json:"rewrite,omitempty,omitzero" yaml:"rewrite,omitempty" mapstructure:"rewrite,omitempty"`
 

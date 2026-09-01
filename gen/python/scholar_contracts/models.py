@@ -1092,6 +1092,10 @@ class ArticleWriteJob(BaseModel):
     """
     生产工作流运行 ID；诊断任务可缺省
     """
+    replay: bool | None = None
+    """
+    节点回放写作；生成新的文章版本而不复用父运行文章
+    """
     rewrite: RewriteContext | None = None
     workflowConfigOverrides: WorkflowConfigOverrides | None = None
 
