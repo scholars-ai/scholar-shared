@@ -486,6 +486,7 @@
       "properties": {
         "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "topicId": { "type": "string", "format": "uuid" },
+        "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
         "rubricVersion": { "description": "缺省用当前生效版本", "type": "string" }
       }
     },
@@ -509,6 +510,7 @@
         "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "topicId": { "type": "string", "format": "uuid" },
         "platform": { "$ref": "#/definitions/Platform" },
+        "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
         "rewrite": { "$ref": "#/definitions/RewriteContext" }
       }
     },
@@ -520,6 +522,7 @@
       "properties": {
         "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "articleId": { "type": "string", "format": "uuid" },
+        "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
         "rubricVersion": { "type": "string" }
       }
     },
@@ -531,6 +534,8 @@
       "properties": {
         "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
         "sourceId": { "type": "string", "format": "uuid" },
+        "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
+        "cascade": { "type": "boolean", "description": "历史兼容字段；生产工作流使用 workflowRunId" },
         "url": { "description": "手动投喂时只抓取这一条 URL；普通 source_fetch 不传", "type": ["string", "null"], "format": "uri" },
         "note": { "description": "手动投喂备注，供留痕使用", "type": ["string", "null"] }
       }
@@ -541,6 +546,7 @@
       "additionalProperties": false,
       "properties": {
         "_meta": { "$ref": "#/definitions/JobTelemetryMeta" },
+        "workflowRunId": { "type": ["string", "null"], "format": "uuid", "description": "生产工作流运行 ID；诊断任务可缺省" },
         "maxTopics": { "type": "integer", "minimum": 1 },
         "rawItemIds": {
           "description": "仅处理指定的 new 素材；手动投喂链路使用",

@@ -610,6 +610,10 @@ export interface TopicEvaluateJob {
   _meta?: JobTelemetryMeta;
   topicId: string;
   /**
+   * 生产工作流运行 ID；诊断任务可缺省
+   */
+  workflowRunId?: string | null;
+  /**
    * 缺省用当前生效版本
    */
   rubricVersion?: string;
@@ -638,6 +642,10 @@ export interface ArticleWriteJob {
   _meta?: JobTelemetryMeta;
   topicId: string;
   platform: Platform;
+  /**
+   * 生产工作流运行 ID；诊断任务可缺省
+   */
+  workflowRunId?: string | null;
   rewrite?: RewriteContext;
 }
 /**
@@ -649,6 +657,10 @@ export interface ArticleWriteJob {
 export interface ArticleEvaluateJob {
   _meta?: JobTelemetryMeta;
   articleId: string;
+  /**
+   * 生产工作流运行 ID；诊断任务可缺省
+   */
+  workflowRunId?: string | null;
   rubricVersion?: string;
 }
 /**
@@ -660,6 +672,14 @@ export interface ArticleEvaluateJob {
 export interface SourceFetchJob {
   _meta?: JobTelemetryMeta;
   sourceId: string;
+  /**
+   * 生产工作流运行 ID；诊断任务可缺省
+   */
+  workflowRunId?: string | null;
+  /**
+   * 历史兼容字段；生产工作流使用 workflowRunId
+   */
+  cascade?: boolean;
   /**
    * 手动投喂时只抓取这一条 URL；普通 source_fetch 不传
    */
@@ -677,6 +697,10 @@ export interface SourceFetchJob {
  */
 export interface TopicScoutJob {
   _meta?: JobTelemetryMeta;
+  /**
+   * 生产工作流运行 ID；诊断任务可缺省
+   */
+  workflowRunId?: string | null;
   maxTopics?: number;
   /**
    * 仅处理指定的 new 素材；手动投喂链路使用

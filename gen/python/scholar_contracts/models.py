@@ -652,6 +652,10 @@ class TopicEvaluateJob(BaseModel):
     )
     field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     topicId: UUID
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
     rubricVersion: str | None = None
     """
     缺省用当前生效版本
@@ -685,6 +689,10 @@ class ArticleWriteJob(BaseModel):
     field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     topicId: UUID
     platform: Platform
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
     rewrite: RewriteContext | None = None
 
 
@@ -698,6 +706,10 @@ class ArticleEvaluateJob(BaseModel):
     )
     field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     articleId: UUID
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
     rubricVersion: str | None = None
 
 
@@ -711,6 +723,14 @@ class SourceFetchJob(BaseModel):
     )
     field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
     sourceId: UUID
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
+    cascade: bool | None = None
+    """
+    历史兼容字段；生产工作流使用 workflowRunId
+    """
     url: AnyUrl | None = None
     """
     手动投喂时只抓取这一条 URL；普通 source_fetch 不传
@@ -730,6 +750,10 @@ class TopicScoutJob(BaseModel):
         extra='forbid',
     )
     field_meta: JobTelemetryMeta | None = Field(None, alias='_meta')
+    workflowRunId: UUID | None = None
+    """
+    生产工作流运行 ID；诊断任务可缺省
+    """
     maxTopics: conint(ge=1) | None = None
     rawItemIds: list[UUID] | None = Field(None, min_length=1)
     """

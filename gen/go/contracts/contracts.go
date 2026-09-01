@@ -254,7 +254,13 @@ type ArticleEvaluateJob struct {
 
 	// RubricVersion corresponds to the JSON schema field "rubricVersion".
 	RubricVersion *string `json:"rubricVersion,omitempty,omitzero" yaml:"rubricVersion,omitempty" mapstructure:"rubricVersion,omitempty"`
+
+	// 生产工作流运行 ID；诊断任务可缺省
+	WorkflowRunId ArticleEvaluateJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
 }
+
+// 生产工作流运行 ID；诊断任务可缺省
+type ArticleEvaluateJobWorkflowRunId *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ArticleEvaluateJob) UnmarshalJSON(value []byte) error {
@@ -362,7 +368,13 @@ type ArticleWriteJob struct {
 
 	// TopicId corresponds to the JSON schema field "topicId".
 	TopicId string `json:"topicId" yaml:"topicId" mapstructure:"topicId"`
+
+	// 生产工作流运行 ID；诊断任务可缺省
+	WorkflowRunId ArticleWriteJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
 }
+
+// 生产工作流运行 ID；诊断任务可缺省
+type ArticleWriteJobWorkflowRunId *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ArticleWriteJob) UnmarshalJSON(value []byte) error {
@@ -2270,6 +2282,9 @@ type SourceFetchJob struct {
 	// Meta corresponds to the JSON schema field "_meta".
 	Meta *JobTelemetryMeta `json:"_meta,omitempty,omitzero" yaml:"_meta,omitempty" mapstructure:"_meta,omitempty"`
 
+	// 历史兼容字段；生产工作流使用 workflowRunId
+	Cascade *bool `json:"cascade,omitempty,omitzero" yaml:"cascade,omitempty" mapstructure:"cascade,omitempty"`
+
 	// 手动投喂备注，供留痕使用
 	Note SourceFetchJobNote `json:"note,omitempty,omitzero" yaml:"note,omitempty" mapstructure:"note,omitempty"`
 
@@ -2278,6 +2293,9 @@ type SourceFetchJob struct {
 
 	// 手动投喂时只抓取这一条 URL；普通 source_fetch 不传
 	Url SourceFetchJobUrl `json:"url,omitempty,omitzero" yaml:"url,omitempty" mapstructure:"url,omitempty"`
+
+	// 生产工作流运行 ID；诊断任务可缺省
+	WorkflowRunId SourceFetchJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
 }
 
 // 手动投喂备注，供留痕使用
@@ -2285,6 +2303,9 @@ type SourceFetchJobNote *string
 
 // 手动投喂时只抓取这一条 URL；普通 source_fetch 不传
 type SourceFetchJobUrl *string
+
+// 生产工作流运行 ID；诊断任务可缺省
+type SourceFetchJobWorkflowRunId *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *SourceFetchJob) UnmarshalJSON(value []byte) error {
@@ -2615,7 +2636,13 @@ type TopicEvaluateJob struct {
 
 	// TopicId corresponds to the JSON schema field "topicId".
 	TopicId string `json:"topicId" yaml:"topicId" mapstructure:"topicId"`
+
+	// 生产工作流运行 ID；诊断任务可缺省
+	WorkflowRunId TopicEvaluateJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
 }
+
+// 生产工作流运行 ID；诊断任务可缺省
+type TopicEvaluateJobWorkflowRunId *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TopicEvaluateJob) UnmarshalJSON(value []byte) error {
@@ -2776,7 +2803,13 @@ type TopicScoutJob struct {
 
 	// 仅处理指定的 new 素材；手动投喂链路使用
 	RawItemIds []string `json:"rawItemIds,omitempty,omitzero" yaml:"rawItemIds,omitempty" mapstructure:"rawItemIds,omitempty"`
+
+	// 生产工作流运行 ID；诊断任务可缺省
+	WorkflowRunId TopicScoutJobWorkflowRunId `json:"workflowRunId,omitempty,omitzero" yaml:"workflowRunId,omitempty" mapstructure:"workflowRunId,omitempty"`
 }
+
+// 生产工作流运行 ID；诊断任务可缺省
+type TopicScoutJobWorkflowRunId *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TopicScoutJob) UnmarshalJSON(value []byte) error {
