@@ -808,6 +808,7 @@ export interface SchedulerSettings {
   topicEvaluate: TopicEvaluateSchedule;
   articleWrite: ArticleWriteSchedule;
   memoryReflect: MemoryReflectSchedule;
+  workflowSnapshots: WorkflowSnapshotRetentionSchedule;
 }
 /**
  * 内容生产工作流调度：按固定小时间隔创建完整 WorkflowRun
@@ -902,6 +903,23 @@ export interface MemoryReflectSchedule {
   time: string;
   timezone: string;
   lookbackDays: number;
+}
+/**
+ * 工作流输入输出快照保留策略；到期后只归档元数据，payload、checksum 和血缘仍可恢复。
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowSnapshotRetentionSchedule".
+ */
+export interface WorkflowSnapshotRetentionSchedule {
+  enabled: boolean;
+  /**
+   * 快照创建后保留时长（小时）
+   */
+  retentionHours: number;
+  /**
+   * 每个 scheduler tick 最多归档的快照数
+   */
+  batchSize: number;
 }
 /**
  * 信源采集健康状态（client 信源管理页展示；连续失败需告警）

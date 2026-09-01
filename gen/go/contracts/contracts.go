@@ -2131,6 +2131,9 @@ type SchedulerSettings struct {
 
 	// TopicScout corresponds to the JSON schema field "topicScout".
 	TopicScout TopicScoutSchedule `json:"topicScout" yaml:"topicScout" mapstructure:"topicScout"`
+
+	// WorkflowSnapshots corresponds to the JSON schema field "workflowSnapshots".
+	WorkflowSnapshots WorkflowSnapshotRetentionSchedule `json:"workflowSnapshots" yaml:"workflowSnapshots" mapstructure:"workflowSnapshots"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -2156,6 +2159,9 @@ func (j *SchedulerSettings) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["topicScout"]; raw != nil && !ok {
 		return fmt.Errorf("field topicScout in SchedulerSettings: required")
+	}
+	if _, ok := raw["workflowSnapshots"]; raw != nil && !ok {
+		return fmt.Errorf("field workflowSnapshots in SchedulerSettings: required")
 	}
 	type Plain SchedulerSettings
 	var plain Plain
@@ -4086,6 +4092,54 @@ func (j *WorkflowSnapshotKind) UnmarshalJSON(value []byte) error {
 }
 
 type WorkflowSnapshotPayload map[string]interface{}
+
+// 工作流输入输出快照保留策略；到期后只归档元数据，payload、checksum 和血缘仍可恢复。
+type WorkflowSnapshotRetentionSchedule struct {
+	// 每个 scheduler tick 最多归档的快照数
+	BatchSize int `json:"batchSize" yaml:"batchSize" mapstructure:"batchSize"`
+
+	// Enabled corresponds to the JSON schema field "enabled".
+	Enabled bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+
+	// 快照创建后保留时长（小时）
+	RetentionHours int `json:"retentionHours" yaml:"retentionHours" mapstructure:"retentionHours"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowSnapshotRetentionSchedule) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["batchSize"]; raw != nil && !ok {
+		return fmt.Errorf("field batchSize in WorkflowSnapshotRetentionSchedule: required")
+	}
+	if _, ok := raw["enabled"]; raw != nil && !ok {
+		return fmt.Errorf("field enabled in WorkflowSnapshotRetentionSchedule: required")
+	}
+	if _, ok := raw["retentionHours"]; raw != nil && !ok {
+		return fmt.Errorf("field retentionHours in WorkflowSnapshotRetentionSchedule: required")
+	}
+	type Plain WorkflowSnapshotRetentionSchedule
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 1000 < plain.BatchSize {
+		return fmt.Errorf("field %s: must be <= %v", "batchSize", 1000)
+	}
+	if 1 > plain.BatchSize {
+		return fmt.Errorf("field %s: must be >= %v", "batchSize", 1)
+	}
+	if 8760 < plain.RetentionHours {
+		return fmt.Errorf("field %s: must be <= %v", "retentionHours", 8760)
+	}
+	if 1 > plain.RetentionHours {
+		return fmt.Errorf("field %s: must be >= %v", "retentionHours", 1)
+	}
+	*j = WorkflowSnapshotRetentionSchedule(plain)
+	return nil
+}
 
 type WorkflowSnapshotStorageRef *string
 

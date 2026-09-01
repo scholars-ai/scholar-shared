@@ -642,14 +642,15 @@
       "description": "全局调度设置（SPEC-008 §3.1）。存 DB、由 client 修改；DEFAULT_* 环境变量只用于首次 seed，运行时真相只在 DB。",
       "type": "object",
       "additionalProperties": false,
-      "required": ["contentWorkflow", "sourceFetch", "topicScout", "topicEvaluate", "articleWrite", "memoryReflect"],
+      "required": ["contentWorkflow", "sourceFetch", "topicScout", "topicEvaluate", "articleWrite", "memoryReflect", "workflowSnapshots"],
       "properties": {
         "contentWorkflow": { "$ref": "#/definitions/ContentWorkflowSchedule" },
         "sourceFetch": { "$ref": "#/definitions/SourceFetchSchedule" },
         "topicScout": { "$ref": "#/definitions/TopicScoutSchedule" },
         "topicEvaluate": { "$ref": "#/definitions/TopicEvaluateSchedule" },
         "articleWrite": { "$ref": "#/definitions/ArticleWriteSchedule" },
-        "memoryReflect": { "$ref": "#/definitions/MemoryReflectSchedule" }
+        "memoryReflect": { "$ref": "#/definitions/MemoryReflectSchedule" },
+        "workflowSnapshots": { "$ref": "#/definitions/WorkflowSnapshotRetentionSchedule" }
       }
     },
     "ContentWorkflowSchedule": {
@@ -729,6 +730,17 @@
         "time": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
         "timezone": { "type": "string", "minLength": 1 },
         "lookbackDays": { "type": "integer", "minimum": 1, "maximum": 90 }
+      }
+    },
+    "WorkflowSnapshotRetentionSchedule": {
+      "description": "工作流输入输出快照保留策略；到期后只归档元数据，payload、checksum 和血缘仍可恢复。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "retentionHours", "batchSize"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "retentionHours": { "description": "快照创建后保留时长（小时）", "type": "integer", "minimum": 1, "maximum": 8760 },
+        "batchSize": { "description": "每个 scheduler tick 最多归档的快照数", "type": "integer", "minimum": 1, "maximum": 1000 }
       }
     },
     "SourceHealth": {

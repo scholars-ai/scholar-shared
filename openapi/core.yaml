@@ -1867,7 +1867,8 @@ components:
         lookbackDays: { type: integer, minimum: 1, maximum: 90 }
     SchedulerSettings:
       type: object
-      required: [contentWorkflow, sourceFetch, topicScout, topicEvaluate, articleWrite, memoryReflect]
+      additionalProperties: false
+      required: [contentWorkflow, sourceFetch, topicScout, topicEvaluate, articleWrite, memoryReflect, workflowSnapshots]
       properties:
         contentWorkflow:
           $ref: "#/components/schemas/ContentWorkflowSchedule"
@@ -1881,15 +1882,28 @@ components:
           $ref: "#/components/schemas/ArticleWriteSchedule"
         memoryReflect:
           $ref: "#/components/schemas/MemoryReflectSchedule"
+        workflowSnapshots:
+          $ref: "#/components/schemas/WorkflowSnapshotRetentionSchedule"
     ContentWorkflowSchedule:
       type: object
       required: [enabled, intervalHours]
+      additionalProperties: false
       properties:
         enabled: { type: boolean }
         intervalHours: { type: integer, minimum: 1, maximum: 168 }
+    WorkflowSnapshotRetentionSchedule:
+      type: object
+      description: 工作流输入输出快照保留策略；到期后只归档元数据，payload、checksum 和血缘仍可恢复。
+      required: [enabled, retentionHours, batchSize]
+      additionalProperties: false
+      properties:
+        enabled: { type: boolean }
+        retentionHours: { type: integer, minimum: 1, maximum: 8760 }
+        batchSize: { type: integer, minimum: 1, maximum: 1000 }
     SchedulerSettingsPatch:
       type: object
       description: 仅传需要改的分组
+      additionalProperties: false
       properties:
         contentWorkflow:
           $ref: "#/components/schemas/ContentWorkflowSchedule"
@@ -1903,3 +1917,5 @@ components:
           $ref: "#/components/schemas/ArticleWriteSchedule"
         memoryReflect:
           $ref: "#/components/schemas/MemoryReflectSchedule"
+        workflowSnapshots:
+          $ref: "#/components/schemas/WorkflowSnapshotRetentionSchedule"

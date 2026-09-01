@@ -1388,10 +1388,17 @@ export interface components {
             topicEvaluate: components["schemas"]["TopicEvaluateSchedule"];
             articleWrite: components["schemas"]["ArticleWriteSchedule"];
             memoryReflect: components["schemas"]["MemoryReflectSchedule"];
+            workflowSnapshots: components["schemas"]["WorkflowSnapshotRetentionSchedule"];
         };
         ContentWorkflowSchedule: {
             enabled: boolean;
             intervalHours: number;
+        };
+        /** @description 工作流输入输出快照保留策略；到期后只归档元数据，payload、checksum 和血缘仍可恢复。 */
+        WorkflowSnapshotRetentionSchedule: {
+            enabled: boolean;
+            retentionHours: number;
+            batchSize: number;
         };
         /** @description 仅传需要改的分组 */
         SchedulerSettingsPatch: {
@@ -1401,6 +1408,7 @@ export interface components {
             topicEvaluate?: components["schemas"]["TopicEvaluateSchedule"];
             articleWrite?: components["schemas"]["ArticleWriteSchedule"];
             memoryReflect?: components["schemas"]["MemoryReflectSchedule"];
+            workflowSnapshots?: components["schemas"]["WorkflowSnapshotRetentionSchedule"];
         };
     };
     responses: {

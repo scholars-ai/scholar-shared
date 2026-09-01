@@ -905,6 +905,25 @@ class MemoryReflectSchedule(BaseModel):
     lookbackDays: conint(ge=1, le=90)
 
 
+class WorkflowSnapshotRetentionSchedule(BaseModel):
+    """
+    工作流输入输出快照保留策略；到期后只归档元数据，payload、checksum 和血缘仍可恢复。
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    enabled: bool
+    retentionHours: conint(ge=1, le=8760)
+    """
+    快照创建后保留时长（小时）
+    """
+    batchSize: conint(ge=1, le=1000)
+    """
+    每个 scheduler tick 最多归档的快照数
+    """
+
+
 class SourceHealth(BaseModel):
     """
     信源采集健康状态（client 信源管理页展示；连续失败需告警）
@@ -1171,6 +1190,7 @@ class SchedulerSettings(BaseModel):
     topicEvaluate: TopicEvaluateSchedule
     articleWrite: ArticleWriteSchedule
     memoryReflect: MemoryReflectSchedule
+    workflowSnapshots: WorkflowSnapshotRetentionSchedule
 
 
 class DimensionScores(BaseModel):
