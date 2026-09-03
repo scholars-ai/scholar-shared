@@ -121,6 +121,16 @@ export type WorkflowItemType = "raw_item" | "topic" | "article";
  */
 export type WorkflowRunMode = "content_production";
 /**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowVersionKind".
+ */
+export type WorkflowVersionKind = "workflow" | "agent" | "prompt" | "rubric" | "weight" | "model";
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowVersionStatus".
+ */
+export type WorkflowVersionStatus = "active" | "retired";
+/**
  * material=能拿到原文，可作写作素材；signal=只有二手摘要，仅供发现（SPEC-003 §2.1）
  *
  * This interface was referenced by `ScholarsContracts`'s JSON-Schema
@@ -180,6 +190,46 @@ export type ArticleEvaluation = EvaluationCore & {
  */
 export interface ScholarsContracts {
   [k: string]: unknown;
+}
+/**
+ * 工作流运行配置引用的不可变版本注册记录（SPEC-010 §5）
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowVersion".
+ */
+export interface WorkflowVersion {
+  id: string;
+  kind: WorkflowVersionKind;
+  name: string;
+  version: string;
+  status: WorkflowVersionStatus;
+  metadata: {
+    [k: string]: unknown;
+  };
+  sha256: string;
+  createdAt: string;
+  retiredAt?: string | null;
+}
+/**
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "WorkflowVersionList".
+ */
+export interface WorkflowVersionList {
+  items: WorkflowVersion[];
+}
+/**
+ * 注册一个不可变的 Agent、prompt、rubric、weight、model 或 workflow 版本
+ *
+ * This interface was referenced by `ScholarsContracts`'s JSON-Schema
+ * via the `definition` "RegisterWorkflowVersionRequest".
+ */
+export interface RegisterWorkflowVersionRequest {
+  kind: WorkflowVersionKind;
+  name: string;
+  version: string;
+  metadata?: {
+    [k: string]: unknown;
+  };
 }
 /**
  * 动态漏斗聚合；数字是本次运行观测值，不是业务配额
@@ -607,6 +657,7 @@ export interface AgentRun {
   entityId: string | null;
   langfuseTraceId: string | null;
   model: string | null;
+  agentVersion: string | null;
   promptVersion: string | null;
   tokensIn: number | null;
   tokensOut: number | null;

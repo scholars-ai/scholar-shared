@@ -89,6 +89,51 @@
       "type": "string",
       "enum": ["content_production"]
     },
+    "WorkflowVersionKind": {
+      "type": "string",
+      "enum": ["workflow", "agent", "prompt", "rubric", "weight", "model"]
+    },
+    "WorkflowVersionStatus": {
+      "type": "string",
+      "enum": ["active", "retired"]
+    },
+    "WorkflowVersion": {
+      "description": "工作流运行配置引用的不可变版本注册记录（SPEC-010 §5）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "name", "version", "status", "metadata", "sha256", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "kind": { "$ref": "#/definitions/WorkflowVersionKind" },
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/definitions/WorkflowVersionStatus" },
+        "metadata": { "type": "object", "additionalProperties": true },
+        "sha256": { "type": "string", "minLength": 64, "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "retiredAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "WorkflowVersionList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/definitions/WorkflowVersion" } }
+      }
+    },
+    "RegisterWorkflowVersionRequest": {
+      "description": "注册一个不可变的 Agent、prompt、rubric、weight、model 或 workflow 版本",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name", "version"],
+      "properties": {
+        "kind": { "$ref": "#/definitions/WorkflowVersionKind" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "version": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "metadata": { "type": "object", "additionalProperties": true }
+      }
+    },
     "WorkflowRunSummary": {
       "description": "动态漏斗聚合；数字是本次运行观测值，不是业务配额",
       "type": "object",
@@ -470,7 +515,7 @@
       "description": "Agent 运行留痕（成本/溯源，SPEC-002）",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "jobType", "entityType", "entityId", "langfuseTraceId", "model", "promptVersion", "tokensIn", "tokensOut", "costUsd", "status"],
+      "required": ["id", "jobType", "entityType", "entityId", "langfuseTraceId", "model", "agentVersion", "promptVersion", "tokensIn", "tokensOut", "costUsd", "status"],
       "properties": {
         "id": { "type": "string", "format": "uuid" },
         "jobType": { "type": "string" },
@@ -478,6 +523,7 @@
         "entityId": { "type": ["string", "null"], "format": "uuid" },
         "langfuseTraceId": { "type": ["string", "null"] },
         "model": { "type": ["string", "null"] },
+        "agentVersion": { "type": ["string", "null"] },
         "promptVersion": { "type": ["string", "null"] },
         "tokensIn": { "type": ["integer", "null"], "minimum": 0 },
         "tokensOut": { "type": ["integer", "null"], "minimum": 0 },

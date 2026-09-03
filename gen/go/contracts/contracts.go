@@ -13,6 +13,9 @@ import "unicode/utf8"
 
 // Agent 运行留痕（成本/溯源，SPEC-002）
 type AgentRun struct {
+	// AgentVersion corresponds to the JSON schema field "agentVersion".
+	AgentVersion AgentRunAgentVersion `json:"agentVersion" yaml:"agentVersion" mapstructure:"agentVersion"`
+
 	// CostUsd corresponds to the JSON schema field "costUsd".
 	CostUsd AgentRunCostUsd `json:"costUsd" yaml:"costUsd" mapstructure:"costUsd"`
 
@@ -46,6 +49,8 @@ type AgentRun struct {
 	// TokensOut corresponds to the JSON schema field "tokensOut".
 	TokensOut AgentRunTokensOut `json:"tokensOut" yaml:"tokensOut" mapstructure:"tokensOut"`
 }
+
+type AgentRunAgentVersion *string
 
 type AgentRunCostUsd *float64
 
@@ -100,6 +105,9 @@ func (j *AgentRun) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
+	}
+	if _, ok := raw["agentVersion"]; raw != nil && !ok {
+		return fmt.Errorf("field agentVersion in AgentRun: required")
 	}
 	if _, ok := raw["costUsd"]; raw != nil && !ok {
 		return fmt.Errorf("field costUsd in AgentRun: required")
@@ -1894,6 +1902,59 @@ func (j *ReflectorInsightDraft) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s length: must be >= %d", "evidence", 1)
 	}
 	*j = ReflectorInsightDraft(plain)
+	return nil
+}
+
+// 注册一个不可变的 Agent、prompt、rubric、weight、model 或 workflow 版本
+type RegisterWorkflowVersionRequest struct {
+	// Kind corresponds to the JSON schema field "kind".
+	Kind WorkflowVersionKind `json:"kind" yaml:"kind" mapstructure:"kind"`
+
+	// Metadata corresponds to the JSON schema field "metadata".
+	Metadata RegisterWorkflowVersionRequestMetadata `json:"metadata,omitempty,omitzero" yaml:"metadata,omitempty" mapstructure:"metadata,omitempty"`
+
+	// Name corresponds to the JSON schema field "name".
+	Name string `json:"name" yaml:"name" mapstructure:"name"`
+
+	// Version corresponds to the JSON schema field "version".
+	Version string `json:"version" yaml:"version" mapstructure:"version"`
+}
+
+type RegisterWorkflowVersionRequestMetadata map[string]interface{}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *RegisterWorkflowVersionRequest) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in RegisterWorkflowVersionRequest: required")
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in RegisterWorkflowVersionRequest: required")
+	}
+	if _, ok := raw["version"]; raw != nil && !ok {
+		return fmt.Errorf("field version in RegisterWorkflowVersionRequest: required")
+	}
+	type Plain RegisterWorkflowVersionRequest
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
+	}
+	if utf8.RuneCountInString(string(plain.Name)) > 120 {
+		return fmt.Errorf("field %s length: must be <= %d", "name", 120)
+	}
+	if utf8.RuneCountInString(string(plain.Version)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "version", 1)
+	}
+	if utf8.RuneCountInString(string(plain.Version)) > 120 {
+		return fmt.Errorf("field %s length: must be <= %d", "version", 120)
+	}
+	*j = RegisterWorkflowVersionRequest(plain)
 	return nil
 }
 
@@ -4211,5 +4272,179 @@ func (j *WorkflowTriggerType) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_WorkflowTriggerType, v)
 	}
 	*j = WorkflowTriggerType(v)
+	return nil
+}
+
+// 工作流运行配置引用的不可变版本注册记录（SPEC-010 §5）
+type WorkflowVersion struct {
+	// CreatedAt corresponds to the JSON schema field "createdAt".
+	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" mapstructure:"createdAt"`
+
+	// Id corresponds to the JSON schema field "id".
+	Id string `json:"id" yaml:"id" mapstructure:"id"`
+
+	// Kind corresponds to the JSON schema field "kind".
+	Kind WorkflowVersionKind `json:"kind" yaml:"kind" mapstructure:"kind"`
+
+	// Metadata corresponds to the JSON schema field "metadata".
+	Metadata WorkflowVersionMetadata `json:"metadata" yaml:"metadata" mapstructure:"metadata"`
+
+	// Name corresponds to the JSON schema field "name".
+	Name string `json:"name" yaml:"name" mapstructure:"name"`
+
+	// RetiredAt corresponds to the JSON schema field "retiredAt".
+	RetiredAt *time.Time `json:"retiredAt,omitempty,omitzero" yaml:"retiredAt,omitempty" mapstructure:"retiredAt,omitempty"`
+
+	// Sha256 corresponds to the JSON schema field "sha256".
+	Sha256 string `json:"sha256" yaml:"sha256" mapstructure:"sha256"`
+
+	// Status corresponds to the JSON schema field "status".
+	Status WorkflowVersionStatus `json:"status" yaml:"status" mapstructure:"status"`
+
+	// Version corresponds to the JSON schema field "version".
+	Version string `json:"version" yaml:"version" mapstructure:"version"`
+}
+
+type WorkflowVersionKind string
+
+const WorkflowVersionKindAgent WorkflowVersionKind = "agent"
+const WorkflowVersionKindModel WorkflowVersionKind = "model"
+const WorkflowVersionKindPrompt WorkflowVersionKind = "prompt"
+const WorkflowVersionKindRubric WorkflowVersionKind = "rubric"
+const WorkflowVersionKindWeight WorkflowVersionKind = "weight"
+const WorkflowVersionKindWorkflow WorkflowVersionKind = "workflow"
+
+var enumValues_WorkflowVersionKind = []interface{}{
+	"workflow",
+	"agent",
+	"prompt",
+	"rubric",
+	"weight",
+	"model",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowVersionKind) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_WorkflowVersionKind {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_WorkflowVersionKind, v)
+	}
+	*j = WorkflowVersionKind(v)
+	return nil
+}
+
+type WorkflowVersionList struct {
+	// Items corresponds to the JSON schema field "items".
+	Items []WorkflowVersion `json:"items" yaml:"items" mapstructure:"items"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowVersionList) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["items"]; raw != nil && !ok {
+		return fmt.Errorf("field items in WorkflowVersionList: required")
+	}
+	type Plain WorkflowVersionList
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = WorkflowVersionList(plain)
+	return nil
+}
+
+type WorkflowVersionMetadata map[string]interface{}
+
+type WorkflowVersionStatus string
+
+const WorkflowVersionStatusActive WorkflowVersionStatus = "active"
+const WorkflowVersionStatusRetired WorkflowVersionStatus = "retired"
+
+var enumValues_WorkflowVersionStatus = []interface{}{
+	"active",
+	"retired",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowVersionStatus) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_WorkflowVersionStatus {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_WorkflowVersionStatus, v)
+	}
+	*j = WorkflowVersionStatus(v)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *WorkflowVersion) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["createdAt"]; raw != nil && !ok {
+		return fmt.Errorf("field createdAt in WorkflowVersion: required")
+	}
+	if _, ok := raw["id"]; raw != nil && !ok {
+		return fmt.Errorf("field id in WorkflowVersion: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in WorkflowVersion: required")
+	}
+	if _, ok := raw["metadata"]; raw != nil && !ok {
+		return fmt.Errorf("field metadata in WorkflowVersion: required")
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in WorkflowVersion: required")
+	}
+	if _, ok := raw["sha256"]; raw != nil && !ok {
+		return fmt.Errorf("field sha256 in WorkflowVersion: required")
+	}
+	if _, ok := raw["status"]; raw != nil && !ok {
+		return fmt.Errorf("field status in WorkflowVersion: required")
+	}
+	if _, ok := raw["version"]; raw != nil && !ok {
+		return fmt.Errorf("field version in WorkflowVersion: required")
+	}
+	type Plain WorkflowVersion
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
+	}
+	if utf8.RuneCountInString(string(plain.Sha256)) < 64 {
+		return fmt.Errorf("field %s length: must be >= %d", "sha256", 64)
+	}
+	if utf8.RuneCountInString(string(plain.Sha256)) > 64 {
+		return fmt.Errorf("field %s length: must be <= %d", "sha256", 64)
+	}
+	if utf8.RuneCountInString(string(plain.Version)) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "version", 1)
+	}
+	*j = WorkflowVersion(plain)
 	return nil
 }

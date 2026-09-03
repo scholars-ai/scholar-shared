@@ -192,6 +192,60 @@ class WorkflowRunMode(StrEnum):
     content_production = 'content_production'
 
 
+class WorkflowVersionKind(StrEnum):
+    workflow = 'workflow'
+    agent = 'agent'
+    prompt = 'prompt'
+    rubric = 'rubric'
+    weight = 'weight'
+    model = 'model'
+
+
+class WorkflowVersionStatus(StrEnum):
+    active = 'active'
+    retired = 'retired'
+
+
+class WorkflowVersion(BaseModel):
+    """
+    工作流运行配置引用的不可变版本注册记录（SPEC-010 §5）
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    id: UUID
+    kind: WorkflowVersionKind
+    name: constr(min_length=1)
+    version: constr(min_length=1)
+    status: WorkflowVersionStatus
+    metadata: dict[str, Any]
+    sha256: constr(min_length=64, max_length=64)
+    createdAt: AwareDatetime
+    retiredAt: AwareDatetime | None = None
+
+
+class WorkflowVersionList(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    items: list[WorkflowVersion]
+
+
+class RegisterWorkflowVersionRequest(BaseModel):
+    """
+    注册一个不可变的 Agent、prompt、rubric、weight、model 或 workflow 版本
+    """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: WorkflowVersionKind
+    name: constr(min_length=1, max_length=120)
+    version: constr(min_length=1, max_length=120)
+    metadata: dict[str, Any] | None = None
+
+
 class WorkflowRunSummary(BaseModel):
     """
     动态漏斗聚合；数字是本次运行观测值，不是业务配额
@@ -648,6 +702,7 @@ class AgentRun(BaseModel):
     entityId: UUID | None
     langfuseTraceId: str | None
     model: str | None
+    agentVersion: str | None
     promptVersion: str | None
     tokensIn: conint(ge=0) | None
     tokensOut: conint(ge=0) | None

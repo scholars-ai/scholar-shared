@@ -486,6 +486,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workflow/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询已注册的工作流配置版本 */
+        get: operations["listWorkflowVersions"];
+        put?: never;
+        /** 注册一个不可变的工作流配置版本 */
+        post: operations["registerWorkflowVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workflow/runs": {
         parameters: {
             query?: never;
@@ -692,6 +710,37 @@ export interface components {
         };
         PipelineRunList: {
             items: components["schemas"]["PipelineRun"][];
+        };
+        /** @enum {string} */
+        WorkflowVersionKind: "workflow" | "agent" | "prompt" | "rubric" | "weight" | "model";
+        /** @enum {string} */
+        WorkflowVersionStatus: "active" | "retired";
+        WorkflowVersion: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["WorkflowVersionKind"];
+            name: string;
+            version: string;
+            status: components["schemas"]["WorkflowVersionStatus"];
+            metadata: {
+                [key: string]: unknown;
+            };
+            sha256: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            retiredAt?: string | null;
+        };
+        WorkflowVersionList: {
+            items: components["schemas"]["WorkflowVersion"][];
+        };
+        RegisterWorkflowVersionRequest: {
+            kind: components["schemas"]["WorkflowVersionKind"];
+            name: string;
+            version: string;
+            metadata?: {
+                [key: string]: unknown;
+            };
         };
         WorkflowRun: {
             /** Format: uuid */
@@ -2280,6 +2329,56 @@ export interface operations {
                     "application/json": components["schemas"]["JobAccepted"];
                 };
             };
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listWorkflowVersions: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["WorkflowVersionKind"];
+                name?: string;
+                status?: components["schemas"]["WorkflowVersionStatus"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowVersionList"];
+                };
+            };
+        };
+    };
+    registerWorkflowVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterWorkflowVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description 已注册 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowVersion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             409: components["responses"]["Conflict"];
         };
     };

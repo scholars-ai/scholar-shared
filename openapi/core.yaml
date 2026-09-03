@@ -660,6 +660,44 @@ paths:
                 $ref: "#/components/schemas/JobAccepted"
         "409":
           $ref: "#/components/responses/Conflict"
+  /v1/workflow/versions:
+    get:
+      operationId: listWorkflowVersions
+      summary: 查询已注册的工作流配置版本
+      parameters:
+        - name: kind
+          in: query
+          schema: { $ref: "#/components/schemas/WorkflowVersionKind" }
+        - name: name
+          in: query
+          schema: { type: string, minLength: 1 }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/WorkflowVersionStatus" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkflowVersionList" }
+    post:
+      operationId: registerWorkflowVersion
+      summary: 注册一个不可变的工作流配置版本
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterWorkflowVersionRequest" }
+      responses:
+        "201":
+          description: 已注册
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkflowVersion" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /v1/workflow/runs:
     get:
       operationId: listWorkflowRuns
@@ -1018,6 +1056,41 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PipelineRun"
+    WorkflowVersionKind:
+      type: string
+      enum: [workflow, agent, prompt, rubric, weight, model]
+    WorkflowVersionStatus:
+      type: string
+      enum: [active, retired]
+    WorkflowVersion:
+      type: object
+      required: [id, kind, name, version, status, metadata, sha256, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/WorkflowVersionKind" }
+        name: { type: string, minLength: 1 }
+        version: { type: string, minLength: 1 }
+        status: { $ref: "#/components/schemas/WorkflowVersionStatus" }
+        metadata: { type: object, additionalProperties: true }
+        sha256: { type: string, minLength: 64, maxLength: 64 }
+        createdAt: { type: string, format: date-time }
+        retiredAt: { type: string, format: date-time, nullable: true }
+    WorkflowVersionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/WorkflowVersion" }
+    RegisterWorkflowVersionRequest:
+      type: object
+      required: [kind, name, version]
+      additionalProperties: false
+      properties:
+        kind: { $ref: "#/components/schemas/WorkflowVersionKind" }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        version: { type: string, minLength: 1, maxLength: 120 }
+        metadata: { type: object, additionalProperties: true }
     WorkflowRun:
       type: object
       required: [id, correlationId, mode, triggerType, startNode, status, createdAt]
